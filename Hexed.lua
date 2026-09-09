@@ -1,7 +1,7 @@
 --[[
-	Hexed - Black Hole Theme GUI Library for Roblox exploits
+	Hexed - Black Hole Red Theme GUI Library
+	Works like Rayfield but with Black Hole aesthetic
 	Author: ttheurus-art
-	Description: Red & black space theme, performance optimized
 ]]
 
 local Hexed = {}
@@ -10,20 +10,6 @@ Hexed.__index = Hexed
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
-
--- ========== CONFIGURATION ==========
-
-local DEFAULT_CONFIG = {
-	Name = "Hexed Window",
-	Icon = 0,
-	Theme = "BlackHole",
-	Position = "TopCenter",
-	ConfigurationSaving = {
-		Enabled = false,
-		FolderName = nil,
-		FileName = "HexedConfig"
-	}
-}
 
 -- ========== THEMES ==========
 
@@ -36,567 +22,429 @@ local THEMES = {
 		Text = Color3.fromRGB(255, 255, 255),
 		TextSecondary = Color3.fromRGB(180, 180, 200),
 		Button = Color3.fromRGB(0, 0, 0),
-		ButtonHover = Color3.fromRGB(30, 10, 10),
-		Glow = Color3.fromRGB(220, 50, 50)
+		ButtonHover = Color3.fromRGB(30, 10, 10)
 	}
 }
 
--- ========== WINDOW CLASS ==========
+-- ========== CREATE WINDOW ==========
 
-local Window = {}
-Window.__index = Window
-
-function Hexed:CreateWindow(config)
-	config = setmetatable(config or {}, {__index = DEFAULT_CONFIG})
+function Hexed:CreateWindow(options)
+	options = options or {}
 	
-	local self = setmetatable({}, Window)
-	self.Name = config.Name
-	self.Icon = config.Icon
-	self.Theme = THEMES[config.Theme] or THEMES.BlackHole
-	self.ThemeName = config.Theme
-	self.Config = config
-	self.Tabs = {}
-	self.TabOrder = {}
-	self.IsOpen = true
-	self.IsDragging = false
-	self.DragOffset = Vector2.new(0, 0)
-	self.Position = config.Position or "TopCenter"
+	local Window = {}
+	Window.Tabs = {}
+	Window.TabObjects = {}
+	Window.Theme = THEMES.BlackHole
 	
 	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 	
+	-- Main Screen GUI
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "HexedGui"
 	screenGui.ResetOnSpawn = false
 	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	screenGui.Parent = playerGui
 	
-	self.ScreenGui = screenGui
-	self.PlayerGui = playerGui
+	-- Main Window Frame
+	local mainWindow = Instance.new("Frame")
+	mainWindow.Name = "MainWindow"
+	mainWindow.BackgroundColor3 = Window.Theme.Background
+	mainWindow.BorderSizePixel = 0
+	mainWindow.Size = UDim2.new(0, 650, 0, 500)
+	mainWindow.Position = UDim2.new(0.5, -325, 0.5, -250)
+	mainWindow.Parent = screenGui
 	
-	self:CreateMainWindow()
-	self:CreateToggleButton()
-	self:SetupResponsiveDesign()
-	self:SetupDragging()
+	-- Add glow border
+	local borderStroke = Instance.new("UIStroke")
+	borderStroke.Color = Window.Theme.Accent
+	borderStroke.Thickness = 2
+	borderStroke.Parent = mainWindow
 	
-	return self
-end
-
-function Window:CreateMainWindow()
-	local mainFrame = Instance.new("Frame")
-	mainFrame.Name = "HexedMainFrame"
-	mainFrame.BackgroundColor3 = self.Theme.Background
-	mainFrame.BorderSizePixel = 0
-	mainFrame.Parent = self.ScreenGui
+	-- Corner radius
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = mainWindow
 	
-	local screenSize = self.ScreenGui.AbsoluteSize
-	local width = math.min(screenSize.X * 0.6, 600)
-	local height = math.min(screenSize.Y * 0.7, 700)
-	
-	mainFrame.Size = UDim2.new(0, width, 0, height)
-	mainFrame.Position = UDim2.new(0.5, -width/2, 0.5, -height/2)
-	
-	-- Red glow border effect (optimized with minimal corners)
-	local borderFrame = Instance.new("Frame")
-	borderFrame.Name = "GlowBorder"
-	borderFrame.BackgroundColor3 = self.Theme.Accent
-	borderFrame.BorderSizePixel = 0
-	borderFrame.Size = UDim2.new(1, 0, 1, 0)
-	borderFrame.Position = UDim2.new(0, 0, 0, 0)
-	borderFrame.Parent = mainFrame
-	borderFrame.ZIndex = 0
-	
-	local uiCorner = Instance.new("UICorner")
-	uiCorner.CornerRadius = UDim.new(0, 8)
-	uiCorner.Parent = borderFrame
-	
-	-- Inner content frame
-	local innerFrame = Instance.new("Frame")
-	innerFrame.Name = "InnerFrame"
-	innerFrame.BackgroundColor3 = self.Theme.Background
-	innerFrame.BorderSizePixel = 0
-	innerFrame.Size = UDim2.new(1, -2, 1, -2)
-	innerFrame.Position = UDim2.new(0, 1, 0, 1)
-	innerFrame.Parent = mainFrame
-	innerFrame.ZIndex = 1
-	
-	local innerCorner = Instance.new("UICorner")
-	innerCorner.CornerRadius = UDim.new(0, 6)
-	innerCorner.Parent = innerFrame
-	
-	-- Top bar (draggable)
+	-- Top Bar
 	local topBar = Instance.new("Frame")
 	topBar.Name = "TopBar"
-	topBar.BackgroundColor3 = self.Theme.Secondary
+	topBar.BackgroundColor3 = Window.Theme.Secondary
 	topBar.BorderSizePixel = 0
-	topBar.Size = UDim2.new(1, 0, 0, 40)
-	topBar.Parent = innerFrame
+	topBar.Size = UDim2.new(1, 0, 0, 45)
+	topBar.Parent = mainWindow
 	
-	local topCorner = Instance.new("UICorner")
-	topCorner.CornerRadius = UDim.new(0, 6)
-	topCorner.Parent = topBar
-	
-	-- Title with red glow
+	-- Title
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.Name = "Title"
-	titleLabel.Text = self.Name
-	titleLabel.TextColor3 = self.Theme.AccentLight
-	titleLabel.TextSize = 16
+	titleLabel.Text = options.Name or "Hexed"
+	titleLabel.TextColor3 = Window.Theme.AccentLight
+	titleLabel.TextSize = 18
+	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Size = UDim2.new(1, -50, 1, 0)
-	titleLabel.Position = UDim2.new(0, 10, 0, 0)
-	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	titleLabel.Position = UDim2.new(0, 15, 0, 0)
 	titleLabel.Parent = topBar
 	
-	-- Close button
-	local closeButton = Instance.new("TextButton")
-	closeButton.Name = "CloseButton"
-	closeButton.Text = "×"
-	closeButton.TextColor3 = self.Theme.AccentLight
-	closeButton.TextSize = 24
-	closeButton.BackgroundColor3 = self.Theme.Button
-	closeButton.BorderSizePixel = 0
-	closeButton.Size = UDim2.new(0, 40, 1, 0)
-	closeButton.Position = UDim2.new(1, -40, 0, 0)
-	closeButton.Parent = topBar
+	-- Close Button
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Name = "CloseBtn"
+	closeBtn.Text = "×"
+	closeBtn.TextColor3 = Window.Theme.AccentLight
+	closeBtn.TextSize = 24
+	closeBtn.BackgroundColor3 = Window.Theme.Button
+	closeBtn.BorderSizePixel = 0
+	closeBtn.Size = UDim2.new(0, 45, 1, 0)
+	closeBtn.Position = UDim2.new(1, -45, 0, 0)
+	closeBtn.Parent = topBar
 	
-	closeButton.MouseButton1Click:Connect(function()
-		self:Toggle()
+	closeBtn.MouseButton1Click:Connect(function()
+		mainWindow.Visible = false
 	end)
 	
-	-- Tab buttons container
+	-- Tab Buttons Frame
 	local tabButtonsFrame = Instance.new("Frame")
 	tabButtonsFrame.Name = "TabButtons"
-	tabButtonsFrame.BackgroundColor3 = self.Theme.Background
+	tabButtonsFrame.BackgroundColor3 = Window.Theme.Background
 	tabButtonsFrame.BorderSizePixel = 0
-	tabButtonsFrame.Size = UDim2.new(1, 0, 0, 35)
-	tabButtonsFrame.Position = UDim2.new(0, 0, 0, 40)
-	tabButtonsFrame.Parent = innerFrame
+	tabButtonsFrame.Size = UDim2.new(1, 0, 0, 40)
+	tabButtonsFrame.Position = UDim2.new(0, 0, 0, 45)
+	tabButtonsFrame.Parent = mainWindow
 	
-	-- Tab content container
-	local tabContentFrame = Instance.new("Frame")
-	tabContentFrame.Name = "TabContent"
-	tabContentFrame.BackgroundColor3 = self.Theme.Background
-	tabContentFrame.BorderSizePixel = 0
-	tabContentFrame.Size = UDim2.new(1, 0, 1, -75)
-	tabContentFrame.Position = UDim2.new(0, 0, 0, 75)
-	tabContentFrame.Parent = innerFrame
+	-- Divider
+	local divider = Instance.new("Frame")
+	divider.BackgroundColor3 = Window.Theme.Accent
+	divider.BorderSizePixel = 0
+	divider.Size = UDim2.new(1, 0, 0, 1)
+	divider.Position = UDim2.new(0, 0, 0, 40)
+	divider.Parent = tabButtonsFrame
 	
-	self.MainFrame = mainFrame
-	self.InnerFrame = innerFrame
-	self.TopBar = topBar
-	self.TabButtonsFrame = tabButtonsFrame
-	self.TabContentFrame = tabContentFrame
-end
-
-function Window:CreateToggleButton()
-	local toggleButton = Instance.new("TextButton")
-	toggleButton.Name = "HexedToggle"
-	toggleButton.Text = "Show Hexed"
-	toggleButton.TextColor3 = self.Theme.Text
-	toggleButton.TextSize = 12
-	toggleButton.BackgroundColor3 = self.Theme.Button
-	toggleButton.BorderSizePixel = 0
-	toggleButton.Parent = self.ScreenGui
-	
-	-- Add glow effect
-	local glow = Instance.new("UIStroke")
-	glow.Color = self.Theme.Accent
-	glow.Thickness = 2
-	glow.Parent = toggleButton
-	
-	if self.Position == "TopCenter" then
-		toggleButton.Size = UDim2.new(0, 100, 0, 30)
-		toggleButton.Position = UDim2.new(0.5, -50, 0, 5)
-	elseif self.Position == "Cube" then
-		toggleButton.Size = UDim2.new(0, 50, 0, 50)
-		toggleButton.Text = "H"
-		toggleButton.Position = UDim2.new(0, 10, 0, 5)
-	end
-	
-	toggleButton.MouseButton1Click:Connect(function()
-		self:Toggle()
-	end)
-	
-	self.ToggleButton = toggleButton
-end
-
-function Window:CreateTab(name, icon)
-	local tab = {
-		Name = name,
-		Icon = icon or 0,
-		Sections = {},
-		SectionOrder = {},
-		Parent = self,
-		IsActive = false
-	}
-	
-	self.Tabs[name] = tab
-	table.insert(self.TabOrder, name)
-	
-	self:CreateTabButton(name, tab)
-	self:CreateTabContent(name, tab)
-	
-	return setmetatable(tab, {__index = Window})
-end
-
-function Window:CreateTabButton(name, tab)
-	local tabButton = Instance.new("TextButton")
-	tabButton.Name = name .. "Button"
-	tabButton.Text = name
-	tabButton.TextColor3 = self.Theme.TextSecondary
-	tabButton.TextSize = 12
-	tabButton.BackgroundColor3 = self.Theme.Secondary
-	tabButton.BorderSizePixel = 0
-	tabButton.Size = UDim2.new(0, 100, 1, 0)
-	tabButton.Parent = self.TabButtonsFrame
-	
-	local index = table.find(self.TabOrder, name) or 1
-	tabButton.Position = UDim2.new(0, (index - 1) * 100, 0, 0)
-	
-	tabButton.MouseButton1Click:Connect(function()
-		self:SelectTab(name)
-	end)
-	
-	tab.Button = tabButton
-end
-
-function Window:CreateTabContent(name, tab)
+	-- Content Frame
 	local contentFrame = Instance.new("Frame")
-	contentFrame.Name = name .. "Content"
+	contentFrame.Name = "ContentFrame"
 	contentFrame.BackgroundTransparency = 1
-	contentFrame.Size = UDim2.new(1, 0, 1, 0)
-	contentFrame.Parent = self.TabContentFrame
-	contentFrame.Visible = false
+	contentFrame.Size = UDim2.new(1, 0, 1, -85)
+	contentFrame.Position = UDim2.new(0, 0, 0, 85)
+	contentFrame.Parent = mainWindow
 	
-	local scrollFrame = Instance.new("ScrollingFrame")
-	scrollFrame.Name = "ScrollFrame"
-	scrollFrame.BackgroundTransparency = 1
-	scrollFrame.Size = UDim2.new(1, -5, 1, 0)
-	scrollFrame.ScrollBarThickness = 6
-	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-	scrollFrame.Parent = contentFrame
+	-- Dragging
+	local isDragging = false
+	local dragStart = nil
+	local windowPos = nil
 	
-	local uiListLayout = Instance.new("UIListLayout")
-	uiListLayout.Padding = UDim.new(0, 3)
-	uiListLayout.Parent = scrollFrame
-	
-	tab.ContentFrame = contentFrame
-	tab.ScrollFrame = scrollFrame
-	tab.ListLayout = uiListLayout
-end
-
-function Window:SelectTab(name)
-	for tabName, tab in pairs(self.Tabs) do
-		if tab.ContentFrame then
-			tab.ContentFrame.Visible = false
-			if tab.Button then
-				tab.Button.TextColor3 = self.Theme.TextSecondary
-				tab.Button.BackgroundColor3 = self.Theme.Secondary
-			end
-		end
-	end
-	
-	local tab = self.Tabs[name]
-	if tab and tab.ContentFrame then
-		tab.ContentFrame.Visible = true
-		if tab.Button then
-			tab.Button.TextColor3 = self.Theme.Accent
-			tab.Button.BackgroundColor3 = self.Theme.Button
-		end
-	end
-end
-
-function Window:CreateSection(name)
-	if not self.ScrollFrame then
-		error("Section must be created inside a Tab")
-	end
-	
-	local sectionFrame = Instance.new("Frame")
-	sectionFrame.Name = name
-	sectionFrame.BackgroundColor3 = self.Theme.Secondary
-	sectionFrame.BorderSizePixel = 0
-	sectionFrame.Size = UDim2.new(1, -10, 0, 20)
-	sectionFrame.Parent = self.ScrollFrame
-	
-	local titleLabel = Instance.new("TextLabel")
-	titleLabel.Name = "Title"
-	titleLabel.Text = name
-	titleLabel.TextColor3 = self.Theme.Accent
-	titleLabel.TextSize = 12
-	titleLabel.BackgroundTransparency = 1
-	titleLabel.Size = UDim2.new(1, 0, 1, 0)
-	titleLabel.Position = UDim2.new(0, 5, 0, 0)
-	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-	titleLabel.Parent = sectionFrame
-	
-	local section = {
-		Name = name,
-		Frame = sectionFrame,
-		Elements = {},
-		Parent = self
-	}
-	
-	table.insert(self.Sections, section)
-	
-	return section
-end
-
-function Window:CreateButton(config)
-	if not self.ScrollFrame then
-		error("Button must be created inside a Tab")
-	end
-	
-	local buttonFrame = Instance.new("Frame")
-	buttonFrame.Name = config.Name
-	buttonFrame.BackgroundColor3 = self.Theme.Button
-	buttonFrame.BorderSizePixel = 0
-	buttonFrame.Size = UDim2.new(1, -10, 0, 40)
-	buttonFrame.Parent = self.ScrollFrame
-	
-	-- Red border/glow effect (minimal)
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = self.Theme.Accent
-	stroke.Thickness = 1
-	stroke.Parent = buttonFrame
-	
-	local button = Instance.new("TextButton")
-	button.Name = "Button"
-	button.Text = config.Name
-	button.TextColor3 = self.Theme.AccentLight
-	button.TextSize = 13
-	button.BackgroundTransparency = 1
-	button.Size = UDim2.new(1, 0, 1, 0)
-	button.Parent = buttonFrame
-	
-	if config.Description then
-		local descLabel = Instance.new("TextLabel")
-		descLabel.Name = "Description"
-		descLabel.Text = config.Description
-		descLabel.TextColor3 = self.Theme.TextSecondary
-		descLabel.TextSize = 10
-		descLabel.BackgroundTransparency = 1
-		descLabel.Size = UDim2.new(1, 0, 0.4, 0)
-		descLabel.Position = UDim2.new(0, 5, 0.6, 0)
-		descLabel.TextXAlignment = Enum.TextXAlignment.Left
-		descLabel.Parent = buttonFrame
-	end
-	
-	button.MouseButton1Click:Connect(function()
-		if config.Callback then
-			config.Callback()
-		end
-	end)
-	
-	button.MouseEnter:Connect(function()
-		buttonFrame.BackgroundColor3 = self.Theme.ButtonHover
-	end)
-	
-	button.MouseLeave:Connect(function()
-		buttonFrame.BackgroundColor3 = self.Theme.Button
-	end)
-	
-	return {
-		Name = config.Name,
-		Frame = buttonFrame,
-		Button = button,
-		Callback = config.Callback
-	}
-end
-
-function Window:CreateToggle(config)
-	if not self.ScrollFrame then
-		error("Toggle must be created inside a Tab")
-	end
-	
-	local toggleFrame = Instance.new("Frame")
-	toggleFrame.Name = config.Name
-	toggleFrame.BackgroundColor3 = self.Theme.Button
-	toggleFrame.BorderSizePixel = 0
-	toggleFrame.Size = UDim2.new(1, -10, 0, 40)
-	toggleFrame.Parent = self.ScrollFrame
-	
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = self.Theme.Accent
-	stroke.Thickness = 1
-	stroke.Parent = toggleFrame
-	
-	local label = Instance.new("TextLabel")
-	label.Name = "Label"
-	label.Text = config.Name
-	label.TextColor3 = self.Theme.AccentLight
-	label.TextSize = 13
-	label.BackgroundTransparency = 1
-	label.Size = UDim2.new(1, -50, 1, 0)
-	label.Position = UDim2.new(0, 10, 0, 0)
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Parent = toggleFrame
-	
-	local toggleButton = Instance.new("TextButton")
-	toggleButton.Name = "Toggle"
-	toggleButton.Text = config.Default and "ON" or "OFF"
-	toggleButton.TextColor3 = self.Theme.Text
-	toggleButton.TextSize = 11
-	toggleButton.BackgroundColor3 = config.Default and self.Theme.Accent or self.Theme.Secondary
-	toggleButton.BorderSizePixel = 0
-	toggleButton.Size = UDim2.new(0, 40, 0, 25)
-	toggleButton.Position = UDim2.new(1, -50, 0.5, -12)
-	toggleButton.Parent = toggleFrame
-	
-	local state = config.Default or false
-	
-	toggleButton.MouseButton1Click:Connect(function()
-		state = not state
-		toggleButton.Text = state and "ON" or "OFF"
-		toggleButton.BackgroundColor3 = state and self.Theme.Accent or self.Theme.Secondary
-		if config.Callback then
-			config.Callback(state)
-		end
-	end)
-	
-	return {
-		Name = config.Name,
-		Frame = toggleFrame,
-		Button = toggleButton,
-		Value = state,
-		Flag = config.Flag or config.Name
-	}
-end
-
-function Window:CreateSlider(config)
-	if not self.ScrollFrame then
-		error("Slider must be created inside a Tab")
-	end
-	
-	local sliderFrame = Instance.new("Frame")
-	sliderFrame.Name = config.Name
-	sliderFrame.BackgroundColor3 = self.Theme.Button
-	sliderFrame.BorderSizePixel = 0
-	sliderFrame.Size = UDim2.new(1, -10, 0, 50)
-	sliderFrame.Parent = self.ScrollFrame
-	
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = self.Theme.Accent
-	stroke.Thickness = 1
-	stroke.Parent = sliderFrame
-	
-	local label = Instance.new("TextLabel")
-	label.Name = "Label"
-	label.Text = config.Name .. ": " .. (config.Default or config.Min)
-	label.TextColor3 = self.Theme.AccentLight
-	label.TextSize = 11
-	label.BackgroundTransparency = 1
-	label.Size = UDim2.new(1, 0, 0, 15)
-	label.Position = UDim2.new(0, 10, 0, 5)
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Parent = sliderFrame
-	
-	local sliderBar = Instance.new("Frame")
-	sliderBar.Name = "Bar"
-	sliderBar.BackgroundColor3 = self.Theme.Secondary
-	sliderBar.BorderSizePixel = 0
-	sliderBar.Size = UDim2.new(1, -20, 0, 4)
-	sliderBar.Position = UDim2.new(0, 10, 0, 28)
-	sliderBar.Parent = sliderFrame
-	
-	local sliderFill = Instance.new("Frame")
-	sliderFill.Name = "Fill"
-	sliderFill.BackgroundColor3 = self.Theme.Accent
-	sliderFill.BorderSizePixel = 0
-	sliderFill.Size = UDim2.new(0, 0, 1, 0)
-	sliderFill.Parent = sliderBar
-	
-	local value = config.Default or config.Min
-	local min = config.Min or 0
-	local max = config.Max or 100
-	
-	local function updateSlider(input)
-		local barSize = sliderBar.AbsoluteSize.X
-		local mousePos = input.Position.X - sliderBar.AbsolutePosition.X
-		local percent = math.clamp(mousePos / barSize, 0, 1)
-		value = math.floor(min + (max - min) * percent)
-		sliderFill.Size = UDim2.new(percent, 0, 1, 0)
-		label.Text = config.Name .. ": " .. value .. (config.Suffix or "")
-		if config.Callback then
-			config.Callback(value)
-		end
-	end
-	
-	sliderBar.InputBegan:Connect(function(input, gameProcessed)
+	topBar.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then return end
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			updateSlider(input)
-			local connection
-			connection = UserInputService.InputChanged:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseMovement then
-					updateSlider(input)
-				end
-			end)
-			UserInputService.InputEnded:Connect(function()
-				connection:Disconnect()
-			end)
-		end
-	end)
-	
-	return {
-		Name = config.Name,
-		Frame = sliderFrame,
-		Value = value,
-		Flag = config.Flag or config.Name
-	}
-end
-
-function Window:Toggle()
-	self.IsOpen = not self.IsOpen
-	self.InnerFrame.Visible = self.IsOpen
-	self.ToggleButton.Visible = not self.IsOpen
-end
-
-function Window:SetupResponsiveDesign()
-	local function adjustSize()
-		local screenSize = self.ScreenGui.AbsoluteSize
-		local width = math.min(screenSize.X * 0.6, 600)
-		local height = math.min(screenSize.Y * 0.7, 700)
-		
-		self.MainFrame.Size = UDim2.new(0, width, 0, height)
-		self.MainFrame.Position = UDim2.new(0.5, -width/2, 0.5, -height/2)
-	end
-	
-	adjustSize()
-	RunService.RenderStepped:Connect(adjustSize)
-end
-
-function Window:SetupDragging()
-	local isDragging = false
-	local dragStart = Vector2.new(0, 0)
-	local windowStart = Vector2.new(0, 0)
-	
-	self.TopBar.InputBegan:Connect(function(input, gameProcessed)
-		if gameProcessed then return end
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			isDragging = true
 			dragStart = input.Position
-			windowStart = self.MainFrame.AbsolutePosition
+			windowPos = mainWindow.Position
 		end
 	end)
 	
 	UserInputService.InputChanged:Connect(function(input)
-		if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 			local delta = input.Position - dragStart
-			local newPos = windowStart + delta
-			self.MainFrame.Position = UDim2.new(0, newPos.X, 0, newPos.Y)
+			mainWindow.Position = UDim2.new(windowPos.X.Scale, windowPos.X.Offset + delta.X, windowPos.Y.Scale, windowPos.Y.Offset + delta.Y)
 		end
 	end)
 	
 	UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			isDragging = false
 		end
 	end)
-end
-
-function Hexed.Notify(title, content, duration)
-	duration = duration or 5
-	print("[" .. title .. "] " .. content)
+	
+	-- CreateTab Function
+	function Window:CreateTab(tabName, tabIcon)
+		local Tab = {}
+		Tab.Name = tabName
+		Tab.Sections = {}
+		
+		-- Tab Button
+		local tabButton = Instance.new("TextButton")
+		tabButton.Name = tabName .. "Button"
+		tabButton.Text = tabName
+		tabButton.TextColor3 = Window.Theme.TextSecondary
+		tabButton.TextSize = 14
+		tabButton.BackgroundColor3 = Window.Theme.Secondary
+		tabButton.BorderSizePixel = 0
+		tabButton.Size = UDim2.new(0, 120, 1, 0)
+		tabButton.Position = UDim2.new(0, (#self.Tabs) * 120, 0, 0)
+		tabButton.Parent = tabButtonsFrame
+		
+		-- Tab Content
+		local tabContent = Instance.new("ScrollingFrame")
+		tabContent.Name = tabName .. "Content"
+		tabContent.BackgroundTransparency = 1
+		tabContent.Size = UDim2.new(1, 0, 1, 0)
+		tabContent.Position = UDim2.new(0, 0, 0, 0)
+		tabContent.ScrollBarThickness = 6
+		tabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+		tabContent.Visible = false
+		tabContent.Parent = contentFrame
+		
+		-- UIListLayout for auto-sizing
+		local layout = Instance.new("UIListLayout")
+		layout.Padding = UDim.new(0, 5)
+		layout.FillDirection = Enum.FillDirection.Vertical
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Parent = tabContent
+		
+		layout.Changed:Connect(function()
+			tabContent.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+		end)
+		
+		Tab.ContentFrame = tabContent
+		Tab.Button = tabButton
+		Tab.Window = Window
+		
+		-- Tab Button Click
+		tabButton.MouseButton1Click:Connect(function()
+			for _, tab in pairs(self.TabObjects) do
+				tab.ContentFrame.Visible = false
+				tab.Button.BackgroundColor3 = Window.Theme.Secondary
+				tab.Button.TextColor3 = Window.Theme.TextSecondary
+			end
+			tabContent.Visible = true
+			tabButton.BackgroundColor3 = Window.Theme.Button
+			tabButton.TextColor3 = Window.Theme.Accent
+		end)
+		
+		if #self.Tabs == 0 then
+			tabContent.Visible = true
+			tabButton.BackgroundColor3 = Window.Theme.Button
+			tabButton.TextColor3 = Window.Theme.Accent
+		end
+		
+		table.insert(self.Tabs, tabName)
+		table.insert(self.TabObjects, Tab)
+		
+		-- CreateSection
+		function Tab:CreateSection(sectionName)
+			local Section = {}
+			Section.Name = sectionName
+			Section.Elements = {}
+			
+			local sectionFrame = Instance.new("Frame")
+			sectionFrame.Name = sectionName
+			sectionFrame.BackgroundColor3 = Window.Theme.Secondary
+			sectionFrame.BorderSizePixel = 0
+			sectionFrame.Size = UDim2.new(1, -10, 0, 25)
+			sectionFrame.Parent = tabContent
+			
+			local sectionLabel = Instance.new("TextLabel")
+			sectionLabel.Text = sectionName
+			sectionLabel.TextColor3 = Window.Theme.Accent
+			sectionLabel.TextSize = 13
+			sectionLabel.BackgroundTransparency = 1
+			sectionLabel.Size = UDim2.new(1, 0, 1, 0)
+			sectionLabel.Position = UDim2.new(0, 10, 0, 0)
+			sectionLabel.TextXAlignment = Enum.TextXAlignment.Left
+			sectionLabel.Parent = sectionFrame
+			
+			Section.Frame = sectionFrame
+			Section.Tab = Tab
+			
+			-- CreateButton
+			function Section:CreateButton(options)
+				local buttonFrame = Instance.new("Frame")
+				buttonFrame.BackgroundColor3 = Window.Theme.Button
+				buttonFrame.BorderSizePixel = 0
+				buttonFrame.Size = UDim2.new(1, -10, 0, 40)
+				buttonFrame.Parent = tabContent
+				
+				local stroke = Instance.new("UIStroke")
+				stroke.Color = Window.Theme.Accent
+				stroke.Thickness = 1
+				stroke.Parent = buttonFrame
+				
+				local buttonText = Instance.new("TextButton")
+				buttonText.Text = options.Name or "Button"
+				buttonText.TextColor3 = Window.Theme.AccentLight
+				buttonText.TextSize = 13
+				buttonText.BackgroundTransparency = 1
+				buttonText.Size = UDim2.new(1, 0, 1, 0)
+				buttonText.Parent = buttonFrame
+				
+				buttonText.MouseButton1Click:Connect(function()
+					if options.Callback then
+						options.Callback()
+					end
+				end)
+				
+				buttonText.MouseEnter:Connect(function()
+					buttonFrame.BackgroundColor3 = Window.Theme.ButtonHover
+				end)
+				
+				buttonText.MouseLeave:Connect(function()
+					buttonFrame.BackgroundColor3 = Window.Theme.Button
+				end)
+				
+				return {Name = options.Name}
+			end
+			
+			-- CreateToggle
+			function Section:CreateToggle(options)
+				local toggleFrame = Instance.new("Frame")
+				toggleFrame.BackgroundColor3 = Window.Theme.Button
+				toggleFrame.BorderSizePixel = 0
+				toggleFrame.Size = UDim2.new(1, -10, 0, 40)
+				toggleFrame.Parent = tabContent
+				
+				local stroke = Instance.new("UIStroke")
+				stroke.Color = Window.Theme.Accent
+				stroke.Thickness = 1
+				stroke.Parent = toggleFrame
+				
+				local toggleLabel = Instance.new("TextLabel")
+				toggleLabel.Text = options.Name or "Toggle"
+				toggleLabel.TextColor3 = Window.Theme.AccentLight
+				toggleLabel.TextSize = 13
+				toggleLabel.BackgroundTransparency = 1
+				toggleLabel.Size = UDim2.new(1, -50, 1, 0)
+				toggleLabel.Position = UDim2.new(0, 10, 0, 0)
+				toggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+				toggleLabel.Parent = toggleFrame
+				
+				local toggleState = options.Default or false
+				
+				local toggleButton = Instance.new("TextButton")
+				toggleButton.Text = toggleState and "ON" or "OFF"
+				toggleButton.TextColor3 = Window.Theme.Text
+				toggleButton.TextSize = 11
+				toggleButton.BackgroundColor3 = toggleState and Window.Theme.Accent or Window.Theme.Secondary
+				toggleButton.BorderSizePixel = 0
+				toggleButton.Size = UDim2.new(0, 40, 0, 25)
+				toggleButton.Position = UDim2.new(1, -50, 0.5, -12)
+				toggleButton.Parent = toggleFrame
+				
+				toggleButton.MouseButton1Click:Connect(function()
+					toggleState = not toggleState
+					toggleButton.Text = toggleState and "ON" or "OFF"
+					toggleButton.BackgroundColor3 = toggleState and Window.Theme.Accent or Window.Theme.Secondary
+					if options.Callback then
+						options.Callback(toggleState)
+					end
+				end)
+				
+				return {State = toggleState}
+			end
+			
+			-- CreateSlider
+			function Section:CreateSlider(options)
+				local sliderFrame = Instance.new("Frame")
+				sliderFrame.BackgroundColor3 = Window.Theme.Button
+				sliderFrame.BorderSizePixel = 0
+				sliderFrame.Size = UDim2.new(1, -10, 0, 55)
+				sliderFrame.Parent = tabContent
+				
+				local stroke = Instance.new("UIStroke")
+				stroke.Color = Window.Theme.Accent
+				stroke.Thickness = 1
+				stroke.Parent = sliderFrame
+				
+				local sliderLabel = Instance.new("TextLabel")
+				sliderLabel.Text = (options.Name or "Slider") .. ": " .. (options.Default or options.Min or 0)
+				sliderLabel.TextColor3 = Window.Theme.AccentLight
+				sliderLabel.TextSize = 12
+				sliderLabel.BackgroundTransparency = 1
+				sliderLabel.Size = UDim2.new(1, 0, 0, 15)
+				sliderLabel.Position = UDim2.new(0, 10, 0, 5)
+				sliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+				sliderLabel.Parent = sliderFrame
+				
+				local sliderBar = Instance.new("Frame")
+				sliderBar.BackgroundColor3 = Window.Theme.Secondary
+				sliderBar.BorderSizePixel = 0
+				sliderBar.Size = UDim2.new(1, -20, 0, 4)
+				sliderBar.Position = UDim2.new(0, 10, 0, 28)
+				sliderBar.Parent = sliderFrame
+				
+				local sliderFill = Instance.new("Frame")
+				sliderFill.BackgroundColor3 = Window.Theme.Accent
+				sliderFill.BorderSizePixel = 0
+				sliderFill.Size = UDim2.new(0, 0, 1, 0)
+				sliderFill.Parent = sliderBar
+				
+				local min = options.Min or 0
+				local max = options.Max or 100
+				local value = options.Default or min
+				
+				local function updateSlider(input)
+					local barSize = sliderBar.AbsoluteSize.X
+					local mousePos = input.Position.X - sliderBar.AbsolutePosition.X
+					local percent = math.clamp(mousePos / barSize, 0, 1)
+					value = math.floor(min + (max - min) * percent)
+					sliderFill.Size = UDim2.new(percent, 0, 1, 0)
+					sliderLabel.Text = (options.Name or "Slider") .. ": " .. value
+					if options.Callback then
+						options.Callback(value)
+					end
+				end
+				
+				sliderBar.InputBegan:Connect(function(input, gameProcessed)
+					if gameProcessed then return end
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+						updateSlider(input)
+						local conn
+						conn = UserInputService.InputChanged:Connect(function(input)
+							if input.UserInputType == Enum.UserInputType.MouseMovement then
+								updateSlider(input)
+							end
+						end)
+						UserInputService.InputEnded:Connect(function(input)
+							if input.UserInputType == Enum.UserInputType.MouseButton1 then
+								conn:Disconnect()
+							end
+						end)
+					end
+				end)
+				
+				return {Value = value}
+			end
+			
+			-- CreateColorPicker
+			function Section:CreateColorPicker(options)
+				local colorFrame = Instance.new("Frame")
+				colorFrame.BackgroundColor3 = Window.Theme.Button
+				colorFrame.BorderSizePixel = 0
+				colorFrame.Size = UDim2.new(1, -10, 0, 40)
+				colorFrame.Parent = tabContent
+				
+				local stroke = Instance.new("UIStroke")
+				stroke.Color = Window.Theme.Accent
+				stroke.Thickness = 1
+				stroke.Parent = colorFrame
+				
+				local colorLabel = Instance.new("TextLabel")
+				colorLabel.Text = options.Name or "Color"
+				colorLabel.TextColor3 = Window.Theme.AccentLight
+				colorLabel.TextSize = 13
+				colorLabel.BackgroundTransparency = 1
+				colorLabel.Size = UDim2.new(1, -50, 1, 0)
+				colorLabel.Position = UDim2.new(0, 10, 0, 0)
+				colorLabel.TextXAlignment = Enum.TextXAlignment.Left
+				colorLabel.Parent = colorFrame
+				
+				local colorBox = Instance.new("Frame")
+				colorBox.BackgroundColor3 = options.Default or Color3.fromRGB(255, 255, 255)
+				colorBox.BorderSizePixel = 0
+				colorBox.Size = UDim2.new(0, 40, 0, 30)
+				colorBox.Position = UDim2.new(1, -50, 0.5, -15)
+				colorBox.Parent = colorFrame
+				
+				return {Color = options.Default or Color3.fromRGB(255, 255, 255)}
+			end
+			
+			return Section
+		end
+		
+		return Tab
+	end
+	
+	Window.ScreenGui = screenGui
+	Window.MainWindow = mainWindow
+	
+	return Window
 end
 
 return Hexed
