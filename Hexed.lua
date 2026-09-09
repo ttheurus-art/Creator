@@ -1,7 +1,7 @@
 --[[
-	Hexed - A responsive GUI library for Roblox exploits
+	Hexed - Black Hole Theme GUI Library for Roblox exploits
 	Author: ttheurus-art
-	Description: Touch-friendly, draggable GUI with mobile, tablet, and PC support
+	Description: Red & black space theme, performance optimized
 ]]
 
 local Hexed = {}
@@ -16,8 +16,8 @@ local Players = game:GetService("Players")
 local DEFAULT_CONFIG = {
 	Name = "Hexed Window",
 	Icon = 0,
-	Theme = "Dark",
-	Position = "TopCenter", -- TopCenter or Cube
+	Theme = "BlackHole",
+	Position = "TopCenter",
 	ConfigurationSaving = {
 		Enabled = false,
 		FolderName = nil,
@@ -28,32 +28,16 @@ local DEFAULT_CONFIG = {
 -- ========== THEMES ==========
 
 local THEMES = {
-	Dark = {
-		Background = Color3.fromRGB(30, 30, 30),
-		Secondary = Color3.fromRGB(50, 50, 50),
-		Accent = Color3.fromRGB(0, 120, 215),
+	BlackHole = {
+		Background = Color3.fromRGB(10, 10, 20),
+		Secondary = Color3.fromRGB(20, 15, 35),
+		Accent = Color3.fromRGB(220, 50, 50),
+		AccentLight = Color3.fromRGB(255, 80, 80),
 		Text = Color3.fromRGB(255, 255, 255),
-		TextSecondary = Color3.fromRGB(200, 200, 200),
-		Button = Color3.fromRGB(60, 60, 60),
-		ButtonHover = Color3.fromRGB(80, 80, 80)
-	},
-	Light = {
-		Background = Color3.fromRGB(240, 240, 240),
-		Secondary = Color3.fromRGB(220, 220, 220),
-		Accent = Color3.fromRGB(0, 120, 215),
-		Text = Color3.fromRGB(30, 30, 30),
-		TextSecondary = Color3.fromRGB(100, 100, 100),
-		Button = Color3.fromRGB(200, 200, 200),
-		ButtonHover = Color3.fromRGB(180, 180, 180)
-	},
-	Ocean = {
-		Background = Color3.fromRGB(20, 40, 70),
-		Secondary = Color3.fromRGB(30, 60, 100),
-		Accent = Color3.fromRGB(0, 150, 255),
-		Text = Color3.fromRGB(255, 255, 255),
-		TextSecondary = Color3.fromRGB(150, 200, 255),
-		Button = Color3.fromRGB(40, 80, 130),
-		ButtonHover = Color3.fromRGB(60, 100, 150)
+		TextSecondary = Color3.fromRGB(180, 180, 200),
+		Button = Color3.fromRGB(0, 0, 0),
+		ButtonHover = Color3.fromRGB(30, 10, 10),
+		Glow = Color3.fromRGB(220, 50, 50)
 	}
 }
 
@@ -68,7 +52,7 @@ function Hexed:CreateWindow(config)
 	local self = setmetatable({}, Window)
 	self.Name = config.Name
 	self.Icon = config.Icon
-	self.Theme = THEMES[config.Theme] or THEMES.Dark
+	self.Theme = THEMES[config.Theme] or THEMES.BlackHole
 	self.ThemeName = config.Theme
 	self.Config = config
 	self.Tabs = {}
@@ -78,10 +62,8 @@ function Hexed:CreateWindow(config)
 	self.DragOffset = Vector2.new(0, 0)
 	self.Position = config.Position or "TopCenter"
 	
-	-- Get player GUI
 	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 	
-	-- Create main ScreenGui
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "HexedGui"
 	screenGui.ResetOnSpawn = false
@@ -91,30 +73,21 @@ function Hexed:CreateWindow(config)
 	self.ScreenGui = screenGui
 	self.PlayerGui = playerGui
 	
-	-- Create main window frame
 	self:CreateMainWindow()
-	
-	-- Create toggle button
 	self:CreateToggleButton()
-	
-	-- Handle responsive design
 	self:SetupResponsiveDesign()
-	
-	-- Handle dragging
 	self:SetupDragging()
 	
 	return self
 end
 
 function Window:CreateMainWindow()
-	-- Main container
 	local mainFrame = Instance.new("Frame")
 	mainFrame.Name = "HexedMainFrame"
 	mainFrame.BackgroundColor3 = self.Theme.Background
 	mainFrame.BorderSizePixel = 0
 	mainFrame.Parent = self.ScreenGui
 	
-	-- Responsive sizing
 	local screenSize = self.ScreenGui.AbsoluteSize
 	local width = math.min(screenSize.X * 0.6, 600)
 	local height = math.min(screenSize.Y * 0.7, 700)
@@ -122,19 +95,51 @@ function Window:CreateMainWindow()
 	mainFrame.Size = UDim2.new(0, width, 0, height)
 	mainFrame.Position = UDim2.new(0.5, -width/2, 0.5, -height/2)
 	
+	-- Red glow border effect (optimized with minimal corners)
+	local borderFrame = Instance.new("Frame")
+	borderFrame.Name = "GlowBorder"
+	borderFrame.BackgroundColor3 = self.Theme.Accent
+	borderFrame.BorderSizePixel = 0
+	borderFrame.Size = UDim2.new(1, 0, 1, 0)
+	borderFrame.Position = UDim2.new(0, 0, 0, 0)
+	borderFrame.Parent = mainFrame
+	borderFrame.ZIndex = 0
+	
+	local uiCorner = Instance.new("UICorner")
+	uiCorner.CornerRadius = UDim.new(0, 8)
+	uiCorner.Parent = borderFrame
+	
+	-- Inner content frame
+	local innerFrame = Instance.new("Frame")
+	innerFrame.Name = "InnerFrame"
+	innerFrame.BackgroundColor3 = self.Theme.Background
+	innerFrame.BorderSizePixel = 0
+	innerFrame.Size = UDim2.new(1, -2, 1, -2)
+	innerFrame.Position = UDim2.new(0, 1, 0, 1)
+	innerFrame.Parent = mainFrame
+	innerFrame.ZIndex = 1
+	
+	local innerCorner = Instance.new("UICorner")
+	innerCorner.CornerRadius = UDim.new(0, 6)
+	innerCorner.Parent = innerFrame
+	
 	-- Top bar (draggable)
 	local topBar = Instance.new("Frame")
 	topBar.Name = "TopBar"
 	topBar.BackgroundColor3 = self.Theme.Secondary
 	topBar.BorderSizePixel = 0
 	topBar.Size = UDim2.new(1, 0, 0, 40)
-	topBar.Parent = mainFrame
+	topBar.Parent = innerFrame
 	
-	-- Title
+	local topCorner = Instance.new("UICorner")
+	topCorner.CornerRadius = UDim.new(0, 6)
+	topCorner.Parent = topBar
+	
+	-- Title with red glow
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.Name = "Title"
 	titleLabel.Text = self.Name
-	titleLabel.TextColor3 = self.Theme.Text
+	titleLabel.TextColor3 = self.Theme.AccentLight
 	titleLabel.TextSize = 16
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Size = UDim2.new(1, -50, 1, 0)
@@ -146,9 +151,9 @@ function Window:CreateMainWindow()
 	local closeButton = Instance.new("TextButton")
 	closeButton.Name = "CloseButton"
 	closeButton.Text = "×"
-	closeButton.TextColor3 = self.Theme.Text
+	closeButton.TextColor3 = self.Theme.AccentLight
 	closeButton.TextSize = 24
-	closeButton.BackgroundColor3 = self.Theme.Secondary
+	closeButton.BackgroundColor3 = self.Theme.Button
 	closeButton.BorderSizePixel = 0
 	closeButton.Size = UDim2.new(0, 40, 1, 0)
 	closeButton.Position = UDim2.new(1, -40, 0, 0)
@@ -165,7 +170,7 @@ function Window:CreateMainWindow()
 	tabButtonsFrame.BorderSizePixel = 0
 	tabButtonsFrame.Size = UDim2.new(1, 0, 0, 35)
 	tabButtonsFrame.Position = UDim2.new(0, 0, 0, 40)
-	tabButtonsFrame.Parent = mainFrame
+	tabButtonsFrame.Parent = innerFrame
 	
 	-- Tab content container
 	local tabContentFrame = Instance.new("Frame")
@@ -174,9 +179,10 @@ function Window:CreateMainWindow()
 	tabContentFrame.BorderSizePixel = 0
 	tabContentFrame.Size = UDim2.new(1, 0, 1, -75)
 	tabContentFrame.Position = UDim2.new(0, 0, 0, 75)
-	tabContentFrame.Parent = mainFrame
+	tabContentFrame.Parent = innerFrame
 	
 	self.MainFrame = mainFrame
+	self.InnerFrame = innerFrame
 	self.TopBar = topBar
 	self.TabButtonsFrame = tabButtonsFrame
 	self.TabContentFrame = tabContentFrame
@@ -188,11 +194,16 @@ function Window:CreateToggleButton()
 	toggleButton.Text = "Show Hexed"
 	toggleButton.TextColor3 = self.Theme.Text
 	toggleButton.TextSize = 12
-	toggleButton.BackgroundColor3 = self.Theme.Accent
+	toggleButton.BackgroundColor3 = self.Theme.Button
 	toggleButton.BorderSizePixel = 0
 	toggleButton.Parent = self.ScreenGui
 	
-	-- Position based on config
+	-- Add glow effect
+	local glow = Instance.new("UIStroke")
+	glow.Color = self.Theme.Accent
+	glow.Thickness = 2
+	glow.Parent = toggleButton
+	
 	if self.Position == "TopCenter" then
 		toggleButton.Size = UDim2.new(0, 100, 0, 30)
 		toggleButton.Position = UDim2.new(0.5, -50, 0, 5)
@@ -222,10 +233,7 @@ function Window:CreateTab(name, icon)
 	self.Tabs[name] = tab
 	table.insert(self.TabOrder, name)
 	
-	-- Create tab button
 	self:CreateTabButton(name, tab)
-	
-	-- Create tab content frame
 	self:CreateTabContent(name, tab)
 	
 	return setmetatable(tab, {__index = Window})
@@ -242,7 +250,6 @@ function Window:CreateTabButton(name, tab)
 	tabButton.Size = UDim2.new(0, 100, 1, 0)
 	tabButton.Parent = self.TabButtonsFrame
 	
-	-- Position button
 	local index = table.find(self.TabOrder, name) or 1
 	tabButton.Position = UDim2.new(0, (index - 1) * 100, 0, 0)
 	
@@ -264,13 +271,13 @@ function Window:CreateTabContent(name, tab)
 	local scrollFrame = Instance.new("ScrollingFrame")
 	scrollFrame.Name = "ScrollFrame"
 	scrollFrame.BackgroundTransparency = 1
-	scrollFrame.Size = UDim2.new(1, 0, 1, 0)
-	scrollFrame.ScrollBarThickness = 8
+	scrollFrame.Size = UDim2.new(1, -5, 1, 0)
+	scrollFrame.ScrollBarThickness = 6
 	scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 	scrollFrame.Parent = contentFrame
 	
 	local uiListLayout = Instance.new("UIListLayout")
-	uiListLayout.Padding = UDim.new(0, 5)
+	uiListLayout.Padding = UDim.new(0, 3)
 	uiListLayout.Parent = scrollFrame
 	
 	tab.ContentFrame = contentFrame
@@ -279,7 +286,6 @@ function Window:CreateTabContent(name, tab)
 end
 
 function Window:SelectTab(name)
-	-- Hide all tabs
 	for tabName, tab in pairs(self.Tabs) do
 		if tab.ContentFrame then
 			tab.ContentFrame.Visible = false
@@ -290,13 +296,12 @@ function Window:SelectTab(name)
 		end
 	end
 	
-	-- Show selected tab
 	local tab = self.Tabs[name]
 	if tab and tab.ContentFrame then
 		tab.ContentFrame.Visible = true
 		if tab.Button then
-			tab.Button.TextColor3 = self.Theme.Text
-			tab.Button.BackgroundColor3 = self.Theme.Accent
+			tab.Button.TextColor3 = self.Theme.Accent
+			tab.Button.BackgroundColor3 = self.Theme.Button
 		end
 	end
 end
@@ -313,7 +318,6 @@ function Window:CreateSection(name)
 	sectionFrame.Size = UDim2.new(1, -10, 0, 20)
 	sectionFrame.Parent = self.ScrollFrame
 	
-	-- Section title
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.Name = "Title"
 	titleLabel.Text = name
@@ -349,11 +353,17 @@ function Window:CreateButton(config)
 	buttonFrame.Size = UDim2.new(1, -10, 0, 40)
 	buttonFrame.Parent = self.ScrollFrame
 	
+	-- Red border/glow effect (minimal)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = self.Theme.Accent
+	stroke.Thickness = 1
+	stroke.Parent = buttonFrame
+	
 	local button = Instance.new("TextButton")
 	button.Name = "Button"
 	button.Text = config.Name
-	button.TextColor3 = self.Theme.Text
-	button.TextSize = 14
+	button.TextColor3 = self.Theme.AccentLight
+	button.TextSize = 13
 	button.BackgroundTransparency = 1
 	button.Size = UDim2.new(1, 0, 1, 0)
 	button.Parent = buttonFrame
@@ -377,6 +387,14 @@ function Window:CreateButton(config)
 		end
 	end)
 	
+	button.MouseEnter:Connect(function()
+		buttonFrame.BackgroundColor3 = self.Theme.ButtonHover
+	end)
+	
+	button.MouseLeave:Connect(function()
+		buttonFrame.BackgroundColor3 = self.Theme.Button
+	end)
+	
 	return {
 		Name = config.Name,
 		Frame = buttonFrame,
@@ -397,11 +415,16 @@ function Window:CreateToggle(config)
 	toggleFrame.Size = UDim2.new(1, -10, 0, 40)
 	toggleFrame.Parent = self.ScrollFrame
 	
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = self.Theme.Accent
+	stroke.Thickness = 1
+	stroke.Parent = toggleFrame
+	
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
 	label.Text = config.Name
-	label.TextColor3 = self.Theme.Text
-	label.TextSize = 14
+	label.TextColor3 = self.Theme.AccentLight
+	label.TextSize = 13
 	label.BackgroundTransparency = 1
 	label.Size = UDim2.new(1, -50, 1, 0)
 	label.Position = UDim2.new(0, 10, 0, 0)
@@ -412,7 +435,7 @@ function Window:CreateToggle(config)
 	toggleButton.Name = "Toggle"
 	toggleButton.Text = config.Default and "ON" or "OFF"
 	toggleButton.TextColor3 = self.Theme.Text
-	toggleButton.TextSize = 12
+	toggleButton.TextSize = 11
 	toggleButton.BackgroundColor3 = config.Default and self.Theme.Accent or self.Theme.Secondary
 	toggleButton.BorderSizePixel = 0
 	toggleButton.Size = UDim2.new(0, 40, 0, 25)
@@ -451,11 +474,16 @@ function Window:CreateSlider(config)
 	sliderFrame.Size = UDim2.new(1, -10, 0, 50)
 	sliderFrame.Parent = self.ScrollFrame
 	
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = self.Theme.Accent
+	stroke.Thickness = 1
+	stroke.Parent = sliderFrame
+	
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
 	label.Text = config.Name .. ": " .. (config.Default or config.Min)
-	label.TextColor3 = self.Theme.Text
-	label.TextSize = 12
+	label.TextColor3 = self.Theme.AccentLight
+	label.TextSize = 11
 	label.BackgroundTransparency = 1
 	label.Size = UDim2.new(1, 0, 0, 15)
 	label.Position = UDim2.new(0, 10, 0, 5)
@@ -466,8 +494,8 @@ function Window:CreateSlider(config)
 	sliderBar.Name = "Bar"
 	sliderBar.BackgroundColor3 = self.Theme.Secondary
 	sliderBar.BorderSizePixel = 0
-	sliderBar.Size = UDim2.new(1, -20, 0, 5)
-	sliderBar.Position = UDim2.new(0, 10, 0, 25)
+	sliderBar.Size = UDim2.new(1, -20, 0, 4)
+	sliderBar.Position = UDim2.new(0, 10, 0, 28)
 	sliderBar.Parent = sliderFrame
 	
 	local sliderFill = Instance.new("Frame")
@@ -517,56 +545,9 @@ function Window:CreateSlider(config)
 	}
 end
 
-function Window:CreateSettings()
-	-- Create Settings tab if not exists
-	if not self.Tabs["Settings"] then
-		local settingsTab = self:CreateTab("Settings", 0)
-		
-		-- Color settings section
-		local colorSection = settingsTab:CreateSection("Colors")
-		
-		-- Background color sliders
-		local bgRSlider = settingsTab:CreateSlider({
-			Name = "Background Red",
-			Min = 0,
-			Max = 255,
-			Default = self.Theme.Background.R * 255,
-			Suffix = "",
-			Callback = function(value)
-				-- Update background color
-			end
-		})
-		
-		local bgGSlider = settingsTab:CreateSlider({
-			Name = "Background Green",
-			Min = 0,
-			Max = 255,
-			Default = self.Theme.Background.G * 255,
-			Suffix = "",
-			Callback = function(value)
-				-- Update background color
-			end
-		})
-		
-		local bgBSlider = settingsTab:CreateSlider({
-			Name = "Background Blue",
-			Min = 0,
-			Max = 255,
-			Default = self.Theme.Background.B * 255,
-			Suffix = "",
-			Callback = function(value)
-				-- Update background color
-			end
-		})
-		
-		-- Theme selection
-		local themeSection = settingsTab:CreateSection("Theme")
-	end
-end
-
 function Window:Toggle()
 	self.IsOpen = not self.IsOpen
-	self.MainFrame.Visible = self.IsOpen
+	self.InnerFrame.Visible = self.IsOpen
 	self.ToggleButton.Visible = not self.IsOpen
 end
 
@@ -612,8 +593,6 @@ function Window:SetupDragging()
 		end
 	end)
 end
-
--- ========== UTILITY FUNCTIONS ==========
 
 function Hexed.Notify(title, content, duration)
 	duration = duration or 5
