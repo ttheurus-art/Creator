@@ -333,7 +333,3 @@ setmetatable(BlackHoleLib, {
         return t
     end
 })
-
-task.defer(initSettingsWindow)
-
-return BlackHoleLib
