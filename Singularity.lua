@@ -667,7 +667,7 @@ function TabClass:CreateDropdown(data)
                     Size = UDim2.new(1, -16, 0, 0)
                 })
             end)
-        }
+        end
     end
 
     button.MouseButton1Click:Connect(function()
