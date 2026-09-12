@@ -1,7 +1,7 @@
 --[[
-    Singularity UI Library v7.1.0
+    Singularity UI Library v8
     Original UI library
-    Theme: Blue Glass / Singularity V7.1
+    Theme: Blue Glass / Singularity v8
     Mobile + PC focused
 ]]
 
