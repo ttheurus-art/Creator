@@ -159,7 +159,11 @@ local function initSettingsWindow(themeName)
     end)
 end
 
-function BlackHoleLib.CreateWindow(title, themeName)
+function BlackHoleLib.CreateWindow(options)
+    -- Memeriksa apakah inputnya berupa tabel (seperti Rayfield) atau teks biasa
+    local title = type(options) == "table" and options.Name or tostring(options or "WINDOW")
+    local themeName = type(options) == "table" and options.Theme or "VIOLET"
+    
     initSettingsWindow(themeName)
     
     local MainFrame, ContentScroll, cfg = buildWindowFrame(title, false, themeName)
@@ -206,6 +210,7 @@ function BlackHoleLib.CreateWindow(title, themeName)
         if not isOpen then MainFrame.Visible = true end
     end)
 end
+
 
 function BlackHoleLib.CreateButton(text, callback)
     if not CurrentActiveContainer then return end
