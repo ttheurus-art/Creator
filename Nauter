@@ -560,7 +560,7 @@ function WindowMethods:CreateTab(config)
         AutoButtonColor = false,
         Text = TabName,
         TextColor3 = Theme.SubText,
-        TextSize = 12,
+        TextSize = 16,
         Font = Enum.Font.GothamMedium,
         LayoutOrder = Tab.Order
     }, Window.TabBar)
@@ -699,7 +699,7 @@ function TabMethods:CreateButton(config)
         AutoButtonColor = false,
         Text = tostring(config.Name or "Button"),
         TextColor3 = Theme.Text,
-        TextSize = 13,
+        TextSize = 16,
         Font = Enum.Font.GothamMedium
     }, Container)
 
@@ -1244,7 +1244,7 @@ function TabMethods:CreateInput(config)
         PlaceholderColor3 = Theme.SubText,
         Text = tostring(config.CurrentValue or ""),
         TextColor3 = Theme.Text,
-        TextSize = 12,
+        TextSize = 16,
         Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Left
     }, Container)
@@ -1453,7 +1453,7 @@ function TabMethods:CreateDropdown(config)
             AutoButtonColor = false,
             Text = Option,
             TextColor3 = Theme.Text,
-            TextSize = 12,
+            TextSize = 16,
             Font = Enum.Font.Gotham,
             TextXAlignment = Enum.TextXAlignment.Left
         }, OptionsFrame)
@@ -1806,7 +1806,7 @@ function TabMethods:CreateColorPicker(config)
         PlaceholderColor3 = Theme.SubText,
         Text = "",
         TextColor3 = Theme.Text,
-        TextSize = 12,
+        TextSize = 16,
         Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Center
     }, PickerPanel)
@@ -1823,7 +1823,7 @@ function TabMethods:CreateColorPicker(config)
         AutoButtonColor = false,
         Text = "Random Color",
         TextColor3 = Theme.White,
-        TextSize = 12,
+        TextSize = 16,
         Font = Enum.Font.GothamMedium
     }, PickerPanel)
 
