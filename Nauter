@@ -155,11 +155,12 @@ local function PlayTween(object, duration, properties)
     return tween
 end
 
+-- Window Drag Fix
 local function ConnectDrag(handle, target, connections)
     local dragging = false
-    local dragInput
-    local dragStart
-    local startPosition
+    local dragInput = nil
+    local dragStart = nil
+    local startPosition = nil
 
     table.insert(connections, handle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -169,12 +170,7 @@ local function ConnectDrag(handle, target, connections)
             dragStart = input.Position
             startPosition = target.Position
 
-            if input.UserInputType == Enum.UserInputType.Touch then
-                dragInput = input
-            end
-
             local endedConnection
-
             endedConnection = input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -184,18 +180,23 @@ local function ConnectDrag(handle, target, connections)
                     end
                 end
             end)
+
+            table.insert(connections, endedConnection)
         end
     end))
 
-    table.insert(connections, UserInputService.InputChanged:Connect(function(input)
-        if not dragging then
-            return
-        end
-
+    table.insert(connections, handle.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement
-            or input == dragInput
             or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end))
 
+    table.insert(connections, game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and (
+            input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch
+        ) then
             local delta = input.Position - dragStart
 
             target.Position = UDim2.new(
