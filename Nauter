@@ -506,12 +506,10 @@ local Main = Create("Frame", {
         })
     end))
 
-    -- Close window.
-table.insert(Window.Connections, CloseButton.Activated:Connect(function()
-    if ScreenGui and ScreenGui.Parent then
-        ScreenGui:Destroy()
-    end
-end))
+    -- Close window
+CloseButton.Activated:Connect(function()
+    ScreenGui:Destroy()
+end)
 
     -- Hover effects.
     for _, Button in ipairs({MinimizeButton, CloseButton}) do
