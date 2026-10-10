@@ -507,9 +507,10 @@ function Nauter:CreateWindow(config)
     end))
 
     -- Close window.
-    table.insert(Window.Connections, CloseButton.Activated:Connect(function()
-        Window:Destroy()
-    end))
+    -- Close window (destroy).
+table.insert(Window.Connections, CloseButton.Activated:Connect(function()
+    Window:Destroy()
+end))
 
     -- Hover effects.
     for _, Button in ipairs({MinimizeButton, CloseButton}) do
