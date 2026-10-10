@@ -156,7 +156,7 @@ local function PlayTween(object, duration, properties)
 end
 
 local function ConnectDrag(handle, target, connections)
-    local dragging = false
+    local dragging = true
     local dragInput
     local dragStart
     local startPosition
