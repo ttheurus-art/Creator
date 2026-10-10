@@ -98,7 +98,7 @@ local function AddButton(parent, text, size, position)
         AutoButtonColor = false,
         Text = text or "",
         TextColor3 = Theme.Text,
-        TextSize = 15,
+        TextSize = 20,
         Font = Enum.Font.GothamMedium
     }, parent)
 
