@@ -1,0 +1,2025 @@
+--========================================
+-- NAUTER LIBRARY
+-- PART 1/6 - CORE GUI
+--========================================
+
+local Nauter = {}
+local WindowMethods = {}
+local TabMethods = {}
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+
+local Theme = {
+    Background = Color3.fromRGB(13, 12, 19),
+    Panel = Color3.fromRGB(22, 19, 32),
+    PanelLight = Color3.fromRGB(32, 26, 45),
+    Purple = Color3.fromRGB(145, 70, 255),
+    PurpleDark = Color3.fromRGB(77, 34, 145),
+    Text = Color3.fromRGB(245, 242, 255),
+    SubText = Color3.fromRGB(165, 157, 183),
+    Border = Color3.fromRGB(103, 59, 166),
+    White = Color3.fromRGB(255, 255, 255),
+    Green = Color3.fromRGB(83, 220, 139),
+    Red = Color3.fromRGB(255, 90, 110)
+}
+
+local function Create(className, properties, parent)
+    local object = Instance.new(className)
+
+    for property, value in pairs(properties or {}) do
+        object[property] = value
+    end
+
+    object.Parent = parent
+    return object
+end
+
+local function AddCorner(object, radius)
+    return Create("UICorner", {
+        CornerRadius = UDim.new(0, radius or 10)
+    }, object)
+end
+
+local function AddStroke(object, color, thickness, transparency)
+    return Create("UIStroke", {
+        Color = color or Theme.Border,
+        Thickness = thickness or 1,
+        Transparency = transparency or 0,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    }, object)
+end
+
+local function AddGradient(object)
+    return Create("UIGradient", {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(
+                0,
+                Color3.fromRGB(12, 12, 18)
+            ),
+            ColorSequenceKeypoint.new(
+                0.55,
+                Color3.fromRGB(35, 20, 57)
+            ),
+            ColorSequenceKeypoint.new(
+                1,
+                Color3.fromRGB(79, 35, 130)
+            )
+        }),
+        Rotation = 25
+    }, object)
+end
+
+local function AddText(parent, text, size, color, font)
+    return Create("TextLabel", {
+        BackgroundTransparency = 1,
+        Text = tostring(text or ""),
+        TextSize = size or 14,
+        TextColor3 = color or Theme.Text,
+        Font = font or Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Center,
+        TextWrapped = true,
+        BorderSizePixel = 0
+    }, parent)
+end
+
+local function AddButton(parent, text, size, position)
+    local button = Create("TextButton", {
+        Name = "Button",
+        Size = size or UDim2.new(1, 0, 0, 38),
+        Position = position or UDim2.new(),
+        BackgroundColor3 = Theme.PanelLight,
+        BackgroundTransparency = 0.05,
+        BorderSizePixel = 0,
+        AutoButtonColor = false,
+        Text = text or "",
+        TextColor3 = Theme.Text,
+        TextSize = 13,
+        Font = Enum.Font.GothamMedium
+    }, parent)
+
+    AddCorner(button, 9)
+
+    button.MouseEnter:Connect(function()
+        TweenService:Create(
+            button,
+            TweenInfo.new(0.15),
+            {BackgroundColor3 = Theme.PurpleDark}
+        ):Play()
+    end)
+
+    button.MouseLeave:Connect(function()
+        TweenService:Create(
+            button,
+            TweenInfo.new(0.15),
+            {BackgroundColor3 = Theme.PanelLight}
+        ):Play()
+    end)
+
+    return button
+end
+
+local function AddPadding(parent, left, right, top, bottom)
+    return Create("UIPadding", {
+        PaddingLeft = UDim.new(0, left or 8),
+        PaddingRight = UDim.new(0, right or 8),
+        PaddingTop = UDim.new(0, top or 8),
+        PaddingBottom = UDim.new(0, bottom or 8)
+    }, parent)
+end
+
+local function AddList(parent, gap)
+    return Create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Vertical,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, gap or 7)
+    }, parent)
+end
+
+local function PlayTween(object, duration, properties)
+    local tween = TweenService:Create(
+        object,
+        TweenInfo.new(
+            duration,
+            Enum.EasingStyle.Quint,
+            Enum.EasingDirection.Out
+        ),
+        properties
+    )
+
+    tween:Play()
+    return tween
+end
+
+local function ConnectDrag(handle, target, connections)
+    local dragging = false
+    local dragInput
+    local dragStart
+    local startPosition
+
+    table.insert(connections, handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+
+            dragging = true
+            dragStart = input.Position
+            startPosition = target.Position
+
+            if input.UserInputType == Enum.UserInputType.Touch then
+                dragInput = input
+            end
+
+            local endedConnection
+
+            endedConnection = input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+
+                    if endedConnection then
+                        endedConnection:Disconnect()
+                    end
+                end
+            end)
+        end
+    end))
+
+    table.insert(connections, UserInputService.InputChanged:Connect(function(input)
+        if not dragging then
+            return
+        end
+
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input == dragInput
+            or input.UserInputType == Enum.UserInputType.Touch then
+
+            local delta = input.Position - dragStart
+
+            target.Position = UDim2.new(
+                startPosition.X.Scale,
+                startPosition.X.Offset + delta.X,
+                startPosition.Y.Scale,
+                startPosition.Y.Offset + delta.Y
+            )
+        end
+    end))
+end
+
+--========================================
+-- WINDOW CREATION
+--========================================
+
+function Nauter:CreateWindow(config)
+    config = config or {}
+
+    local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+    -- Remove the previous Nauter GUI.
+    local OldGui = PlayerGui:FindFirstChild("Nauter")
+
+    if OldGui then
+        OldGui:Destroy()
+    end
+
+    local ScreenGui = Create("ScreenGui", {
+        Name = "Nauter",
+        ResetOnSpawn = false,
+        IgnoreGuiInset = true,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        DisplayOrder = 100
+    }, PlayerGui)
+
+    local Window = setmetatable({
+        Gui = ScreenGui,
+        Connections = {},
+        Tabs = {},
+        SelectedTab = nil,
+        IsMinimized = false,
+        IsDestroyed = false,
+        Name = config.Name or "Nauter",
+        Notifications = {},
+        _NotificationCount = 0
+    }, {
+        __index = WindowMethods
+    })
+
+    -- Main window.
+    local Main = Create("Frame", {
+        Name = "Main",
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.fromOffset(520, 370),
+        BackgroundColor3 = Theme.Background,
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0,
+        ClipsDescendants = true
+    }, ScreenGui)
+
+    Window.Main = Main
+
+    AddCorner(Main, 14)
+    AddStroke(Main, Theme.Border, 1.4, 0.1)
+    AddGradient(Main)
+
+    -- Responsive scaling.
+    local Scale = Create("UIScale", {
+        Scale = 1
+    }, Main)
+
+    Window.Scale = Scale
+
+    local function UpdateScale()
+        local Camera = workspace.CurrentCamera
+
+        if not Camera then
+            return
+        end
+
+        local Viewport = Camera.ViewportSize
+        local ShortSide = math.min(Viewport.X, Viewport.Y)
+
+        if ShortSide < 500 then
+            Scale.Scale = 0.76
+        elseif ShortSide < 750 then
+            Scale.Scale = 0.88
+        else
+            Scale.Scale = 1
+        end
+    end
+
+    UpdateScale()
+
+    if workspace.CurrentCamera then
+        table.insert(Window.Connections,
+            workspace.CurrentCamera:GetPropertyChangedSignal(
+                "ViewportSize"
+            ):Connect(UpdateScale)
+        )
+    end
+
+    -- Header.
+    local Header = Create("Frame", {
+        Name = "Header",
+        Size = UDim2.new(1, 0, 0, 43),
+        BackgroundColor3 = Theme.Background,
+        BackgroundTransparency = 0.05,
+        BorderSizePixel = 0,
+        ZIndex = 2
+    }, Main)
+
+    Window.Header = Header
+
+    AddCorner(Header, 14)
+
+    -- Cover lower header corners.
+    Create("Frame", {
+        Name = "HeaderBottomCover",
+        Position = UDim2.new(0, 0, 1, -14),
+        Size = UDim2.new(1, 0, 0, 14),
+        BackgroundColor3 = Theme.Background,
+        BackgroundTransparency = 0.05,
+        BorderSizePixel = 0,
+        ZIndex = 2
+    }, Header)
+
+    local HeaderTitle = AddText(
+        Header,
+        Window.Name,
+        15,
+        Theme.Text,
+        Enum.Font.GothamBold
+    )
+
+    HeaderTitle.Name = "Title"
+    HeaderTitle.Position = UDim2.new(0, 14, 0, 0)
+    HeaderTitle.Size = UDim2.new(1, -100, 1, 0)
+    HeaderTitle.ZIndex = 3
+
+    Window.TitleLabel = HeaderTitle
+
+    -- Minimize button.
+    local MinimizeButton = Create("TextButton", {
+        Name = "Minimize",
+        Position = UDim2.new(1, -68, 0, 7),
+        Size = UDim2.fromOffset(26, 27),
+        BackgroundColor3 = Theme.PanelLight,
+        BorderSizePixel = 0,
+        AutoButtonColor = false,
+        Text = "-",
+        TextSize = 22,
+        TextColor3 = Theme.Text,
+        Font = Enum.Font.GothamBold,
+        ZIndex = 4
+    }, Header)
+
+    AddCorner(MinimizeButton, 8)
+
+    -- Close button.
+    local CloseButton = Create("TextButton", {
+        Name = "Close",
+        Position = UDim2.new(1, -35, 0, 7),
+        Size = UDim2.fromOffset(26, 27),
+        BackgroundColor3 = Color3.fromRGB(100, 35, 58),
+        BorderSizePixel = 0,
+        AutoButtonColor = false,
+        Text = "x",
+        TextSize = 15,
+        TextColor3 = Theme.White,
+        Font = Enum.Font.GothamBold,
+        ZIndex = 4
+    }, Header)
+
+    AddCorner(CloseButton, 8)
+
+    Window.MinimizeButton = MinimizeButton
+    Window.CloseButton = CloseButton
+
+    -- Tab navigation.
+    local TabBar = Create("ScrollingFrame", {
+        Name = "TabBar",
+        Position = UDim2.new(0, 10, 0, 52),
+        Size = UDim2.new(1, -20, 0, 35),
+        BackgroundColor3 = Theme.Panel,
+        BackgroundTransparency = 0.15,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 2,
+        ScrollBarImageColor3 = Theme.Purple,
+        ScrollingDirection = Enum.ScrollingDirection.X,
+        CanvasSize = UDim2.new()
+    }, Main)
+
+    AddCorner(TabBar, 9)
+
+    local TabLayout = Create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Horizontal,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 5)
+    }, TabBar)
+
+    AddPadding(TabBar, 5, 5, 4, 4)
+
+    Window.TabBar = TabBar
+    Window.TabLayout = TabLayout
+
+    table.insert(Window.Connections, TabLayout:GetPropertyChangedSignal(
+        "AbsoluteContentSize"
+    ):Connect(function()
+        TabBar.CanvasSize = UDim2.new(
+            0,
+            TabLayout.AbsoluteContentSize.X + 10,
+            0,
+            0
+        )
+    end))
+
+    -- Content area.
+    local Content = Create("Frame", {
+        Name = "Content",
+        Position = UDim2.new(0, 10, 0, 96),
+        Size = UDim2.new(1, -20, 1, -106),
+        BackgroundColor3 = Theme.Panel,
+        BackgroundTransparency = 0.13,
+        BorderSizePixel = 0,
+        ClipsDescendants = true
+    }, Main)
+
+    AddCorner(Content, 11)
+    AddStroke(Content, Theme.Border, 1, 0.65)
+
+    Window.Content = Content
+
+    -- Floating restore button.
+    local FloatingButton = Create("TextButton", {
+        Name = "NauterRestore",
+        AnchorPoint = Vector2.new(0, 0),
+        Position = UDim2.new(0, 15, 0.5, -25),
+        Size = UDim2.fromOffset(50, 50),
+        BackgroundColor3 = Theme.PurpleDark,
+        BackgroundTransparency = 0.05,
+        BorderSizePixel = 0,
+        Text = "N",
+        TextColor3 = Theme.White,
+        TextSize = 23,
+        Font = Enum.Font.GothamBold,
+        Visible = false,
+        ZIndex = 20
+    }, ScreenGui)
+
+    AddCorner(FloatingButton, 25)
+    AddStroke(FloatingButton, Theme.Purple, 1.5, 0)
+
+    Window.FloatingButton = FloatingButton
+
+    -- Save the original window dimensions.
+    local NormalSize = Main.Size
+    local NormalPosition = Main.Position
+
+    -- Drag window using its header.
+    ConnectDrag(Header, Main, Window.Connections)
+
+    -- Minimize animation.
+    table.insert(Window.Connections, MinimizeButton.Activated:Connect(function()
+        if Window.IsMinimized or Window.IsDestroyed then
+            return
+        end
+
+        Window.IsMinimized = true
+        NormalSize = Main.Size
+        NormalPosition = Main.Position
+
+        PlayTween(Main, 0.25, {
+            Size = UDim2.fromOffset(0, 0),
+            BackgroundTransparency = 1
+        })
+
+        task.delay(0.26, function()
+            if Window.IsDestroyed then
+                return
+            end
+
+            Main.Visible = false
+            Main.Size = NormalSize
+            Main.BackgroundTransparency = 0.1
+            FloatingButton.Visible = true
+        end)
+    end))
+
+    -- Restore window.
+    table.insert(Window.Connections, FloatingButton.Activated:Connect(function()
+        if Window.IsDestroyed then
+            return
+        end
+
+        Window.IsMinimized = false
+        FloatingButton.Visible = false
+
+        Main.Visible = true
+        Main.Size = UDim2.fromOffset(0, 0)
+        Main.Position = NormalPosition
+
+        PlayTween(Main, 0.3, {
+            Size = NormalSize,
+            BackgroundTransparency = 0.1
+        })
+    end))
+
+    -- Close window.
+    table.insert(Window.Connections, CloseButton.Activated:Connect(function()
+        Window:Destroy()
+    end))
+
+    -- Hover effects.
+    for _, Button in ipairs({MinimizeButton, CloseButton}) do
+        table.insert(Window.Connections, Button.MouseEnter:Connect(function()
+            if Button == CloseButton then
+                Button.BackgroundColor3 = Theme.Red
+            else
+                Button.BackgroundColor3 = Theme.PurpleDark
+            end
+        end))
+
+        table.insert(Window.Connections, Button.MouseLeave:Connect(function()
+            if Button == CloseButton then
+                Button.BackgroundColor3 = Color3.fromRGB(100, 35, 58)
+            else
+                Button.BackgroundColor3 = Theme.PanelLight
+            end
+        end))
+    end
+
+    return Window
+end
+
+-- PART 1/6 ENDS HERE
+-- PART 2 continues with tabs and components.
+--========================================
+-- NAUTER LIBRARY
+-- PART 2/6 - TABS & BASIC COMPONENTS
+--========================================
+
+-- TAB CREATION
+function WindowMethods:CreateTab(config)
+    config = config or {}
+
+    local Window = self
+
+    if Window.IsDestroyed then
+        error("Cannot create a tab on a destroyed window.")
+    end
+
+    local TabName = tostring(config.Name or "Tab")
+    local Tab = setmetatable({
+        Window = Window,
+        Name = TabName,
+        Elements = {},
+        Order = #Window.Tabs + 1
+    }, {
+        __index = TabMethods
+    })
+
+    -- Tab button
+    local TabButton = Create("TextButton", {
+        Name = "Tab_" .. TabName,
+        Size = UDim2.fromOffset(105, 27),
+        BackgroundColor3 = Theme.PanelLight,
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0,
+        AutoButtonColor = false,
+        Text = TabName,
+        TextColor3 = Theme.SubText,
+        TextSize = 12,
+        Font = Enum.Font.GothamMedium,
+        LayoutOrder = Tab.Order
+    }, Window.TabBar)
+
+    AddCorner(TabButton, 7)
+
+    local TabStroke = AddStroke(
+        TabButton,
+        Theme.Border,
+        1,
+        1
+    )
+
+    -- Tab page
+    local Page = Create("ScrollingFrame", {
+        Name = "Page_" .. TabName,
+        Size = UDim2.fromScale(1, 1),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = Theme.Purple,
+        CanvasSize = UDim2.new(),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        ScrollingDirection = Enum.ScrollingDirection.Y,
+        Visible = false
+    }, Window.Content)
+
+    AddPadding(Page, 10, 10, 10, 10)
+
+    local ElementLayout = AddList(Page, 8)
+
+    Tab.Button = TabButton
+    Tab.Page = Page
+    Tab.Layout = ElementLayout
+
+    table.insert(Window.Tabs, Tab)
+
+    -- Select this tab
+    local function SelectThisTab()
+        if Window.IsDestroyed then
+            return
+        end
+
+        Window.SelectedTab = Tab
+
+        for _, ExistingTab in ipairs(Window.Tabs) do
+            local Selected = ExistingTab == Tab
+
+            ExistingTab.Page.Visible = Selected
+
+            PlayTween(
+                ExistingTab.Button,
+                0.15,
+                {
+                    BackgroundColor3 = Selected
+                        and Theme.PurpleDark
+                        or Theme.PanelLight,
+
+                    BackgroundTransparency = Selected
+                        and 0
+                        or 0.1,
+
+                    TextColor3 = Selected
+                        and Theme.White
+                        or Theme.SubText
+                }
+            )
+
+            ExistingTab.Stroke.Transparency = Selected and 0 or 1
+        end
+    end
+
+    Tab.Select = SelectThisTab
+    Tab.Stroke = TabStroke
+
+    table.insert(Window.Connections, TabButton.Activated:Connect(
+        SelectThisTab
+    ))
+
+    if #Window.Tabs == 1 then
+        SelectThisTab()
+    end
+
+    return Tab
+end
+
+-- SELECT TAB BY NAME
+function WindowMethods:SelectTab(Name)
+    for _, Tab in ipairs(self.Tabs) do
+        if Tab.Name == Name then
+            Tab.Select()
+            return true
+        end
+    end
+
+    return false
+end
+
+-- CREATE A STANDARD COMPONENT CONTAINER
+local function CreateContainer(Tab, Name, Height)
+    local Container = Create("Frame", {
+        Name = Name or "Component",
+        Size = UDim2.new(1, 0, 0, Height or 40),
+        BackgroundColor3 = Theme.PanelLight,
+        BackgroundTransparency = 0.08,
+        BorderSizePixel = 0,
+        ClipsDescendants = true
+    }, Tab.Page)
+
+    AddCorner(Container, 9)
+    AddStroke(Container, Theme.Border, 1, 0.8)
+
+    table.insert(Tab.Elements, Container)
+
+    return Container
+end
+
+-- BUTTON
+function TabMethods:CreateButton(config)
+    config = config or {}
+
+    local Tab = self
+    local Callback = config.Callback or function() end
+
+    local Container = CreateContainer(
+        Tab,
+        config.Name or "Button",
+        40
+    )
+
+    local Button = Create("TextButton", {
+        Name = "ActionButton",
+        Size = UDim2.fromScale(1, 1),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        AutoButtonColor = false,
+        Text = tostring(config.Name or "Button"),
+        TextColor3 = Theme.Text,
+        TextSize = 13,
+        Font = Enum.Font.GothamMedium
+    }, Container)
+
+    Button.Activated:Connect(function()
+        if Tab.Window.IsDestroyed then
+            return
+        end
+
+        PlayTween(
+            Container,
+            0.12,
+            {BackgroundColor3 = Theme.PurpleDark}
+        )
+
+        task.delay(0.15, function()
+            if Container.Parent then
+                PlayTween(
+                    Container,
+                    0.12,
+                    {BackgroundColor3 = Theme.PanelLight}
+                )
+            end
+        end)
+
+        local Success, ErrorMessage = pcall(Callback)
+
+        if not Success then
+            warn("[Nauter Button Error]:", ErrorMessage)
+        end
+    end)
+
+    return {
+        Instance = Container,
+        Button = Button,
+        SetText = function(_, Text)
+            Button.Text = tostring(Text)
+        end
+    }
+end
+
+-- TOGGLE
+function TabMethods:CreateToggle(config)
+    config = config or {}
+
+    local Tab = self
+    local Callback = config.Callback or function() end
+    local CurrentValue = config.CurrentValue == true
+
+    local Container = CreateContainer(
+        Tab,
+        config.Name or "Toggle",
+        42
+    )
+
+    local Label = AddText(
+        Container,
+        config.Name or "Toggle",
+        13,
+        Theme.Text,
+        Enum.Font.GothamMedium
+    )
+
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.Size = UDim2.new(1, -65, 1, 0)
+
+    local Switch = Create("TextButton", {
+        Name = "Switch",
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -9, 0.5, 0),
+        Size = UDim2.fromOffset(39, 22),
+        BackgroundColor3 = CurrentValue
+            and Theme.Purple
+            or Color3.fromRGB(65, 60, 75),
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = false
+    }, Container)
+
+    AddCorner(Switch, 11)
+
+    local Knob = Create("Frame", {
+        Name = "Knob",
+        AnchorPoint = Vector2.new(0, 0.5),
+        Position = CurrentValue
+            and UDim2.new(1, -19, 0.5, 0)
+            or UDim2.new(0, 3, 0.5, 0),
+        Size = UDim2.fromOffset(16, 16),
+        BackgroundColor3 = Theme.White,
+        BorderSizePixel = 0
+    }, Switch)
+
+    AddCorner(Knob, 8)
+
+    local function SetValue(Value, FireCallback)
+        CurrentValue = Value == true
+
+        PlayTween(Switch, 0.15, {
+            BackgroundColor3 = CurrentValue
+                and Theme.Purple
+                or Color3.fromRGB(65, 60, 75)
+        })
+
+        PlayTween(Knob, 0.15, {
+            Position = CurrentValue
+                and UDim2.new(1, -19, 0.5, 0)
+                or UDim2.new(0, 3, 0.5, 0)
+        })
+
+        if FireCallback ~= false then
+            local Success, ErrorMessage = pcall(
+                Callback,
+                CurrentValue
+            )
+
+            if not Success then
+                warn("[Nauter Toggle Error]:", ErrorMessage)
+            end
+        end
+    end
+
+    Switch.Activated:Connect(function()
+        if Tab.Window.IsDestroyed then
+            return
+        end
+
+        SetValue(not CurrentValue, true)
+    end)
+
+    local API = {
+        Instance = Container,
+        Button = Switch,
+        Set = function(_, Value)
+            SetValue(Value, true)
+        end,
+        Get = function()
+            return CurrentValue
+        end
+    }
+
+    -- Initialize without firing the callback.
+    SetValue(CurrentValue, false)
+
+    return API
+end
+
+-- LABEL
+function TabMethods:CreateLabel(config)
+    config = config or {}
+
+    local Text = config.Name or config.Text or "Label"
+
+    local Container = CreateContainer(
+        self,
+        "Label",
+        config.Size or 34
+    )
+
+    local Label = AddText(
+        Container,
+        Text,
+        config.TextSize or 13,
+        Theme.Text,
+        Enum.Font.Gotham
+    )
+
+    Label.Name = "LabelText"
+    Label.Position = UDim2.new(0, 10, 0, 3)
+    Label.Size = UDim2.new(1, -20, 1, -6)
+
+    return {
+        Instance = Container,
+        Label = Label,
+        SetText = function(_, NewText)
+            Label.Text = tostring(NewText)
+        end
+    }
+end
+
+-- DIVIDER
+function TabMethods:CreateDivider(config)
+    config = config or {}
+
+    local Container = Create("Frame", {
+        Name = "Divider",
+        Size = UDim2.new(1, 0, 0, config.Size or 12),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0
+    }, self.Page)
+
+    local Line = Create("Frame", {
+        Name = "Line",
+        AnchorPoint = Vector2.new(0, 0.5),
+        Position = UDim2.new(0, 2, 0.5, 0),
+        Size = UDim2.new(1, -4, 0, 1),
+        BackgroundColor3 = Theme.Border,
+        BackgroundTransparency = 0.25,
+        BorderSizePixel = 0
+    }, Container)
+
+    table.insert(self.Elements, Container)
+
+    return {
+        Instance = Container,
+        Line = Line
+    }
+end
+
+-- PARAGRAPH
+function TabMethods:CreateParagraph(config)
+    config = config or {}
+
+    local Tab = self
+    local TitleText = tostring(config.Title or "Information")
+    local ContentText = tostring(config.Content or "")
+
+    local Container = CreateContainer(
+        Tab,
+        "Paragraph",
+        75
+    )
+
+    Container.AutomaticSize = Enum.AutomaticSize.Y
+    Container.Size = UDim2.new(1, 0, 0, 0)
+
+    local InternalPadding = AddPadding(
+        Container,
+        10,
+        10,
+        8,
+        8
+    )
+
+    local Layout = Create("UIListLayout", {
+        FillDirection = Enum.FillDirection.Vertical,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 4)
+    }, Container)
+
+    local Title = AddText(
+        Container,
+        TitleText,
+        13,
+        Theme.Purple,
+        Enum.Font.GothamBold
+    )
+
+    Title.Name = "ParagraphTitle"
+    Title.Size = UDim2.new(1, 0, 0, 20)
+    Title.LayoutOrder = 1
+
+    local ContentLabel = AddText(
+        Container,
+        ContentText,
+        12,
+        Theme.SubText,
+        Enum.Font.Gotham
+    )
+
+    ContentLabel.Name = "ParagraphContent"
+    ContentLabel.Size = UDim2.new(1, 0, 0, 0)
+    ContentLabel.AutomaticSize = Enum.AutomaticSize.Y
+    ContentLabel.TextYAlignment = Enum.TextYAlignment.Top
+    ContentLabel.LayoutOrder = 2
+
+    return {
+        Instance = Container,
+        Title = Title,
+        Content = ContentLabel,
+
+        SetTitle = function(_, NewTitle)
+            Title.Text = tostring(NewTitle)
+        end,
+
+        SetContent = function(_, NewContent)
+            ContentLabel.Text = tostring(NewContent)
+        end
+    }
+end
+
+--========================================
+-- PART 2/6 ENDS HERE
+-- PART 3: SLIDER, INPUT, DROPDOWN
+--========================================
+--========================================
+-- NAUTER LIBRARY
+-- PART 3/6 - SLIDER, INPUT, DROPDOWN
+--========================================
+
+-- SLIDER
+function TabMethods:CreateSlider(config)
+    config = config or {}
+
+    local Tab = self
+    local Callback = config.Callback or function() end
+    local Minimum = tonumber(config.Range and config.Range[1]) or 0
+    local Maximum = tonumber(config.Range and config.Range[2]) or 100
+    local Increment = math.max(tonumber(config.Increment) or 1, 0.000001)
+
+    if Maximum < Minimum then
+        Minimum, Maximum = Maximum, Minimum
+    end
+
+    local Default = tonumber(config.CurrentValue)
+        or tonumber(config.Default)
+        or Minimum
+
+    local CurrentValue = math.clamp(Default, Minimum, Maximum)
+
+    local Container = CreateContainer(
+        Tab,
+        config.Name or "Slider",
+        65
+    )
+
+    Container.ClipsDescendants = false
+
+    local Title = AddText(
+        Container,
+        tostring(config.Name or "Slider"),
+        12,
+        Theme.Text,
+        Enum.Font.GothamMedium
+    )
+
+    Title.Position = UDim2.new(0, 10, 0, 5)
+    Title.Size = UDim2.new(1, -90, 0, 20)
+
+    local ValueLabel = AddText(
+        Container,
+        tostring(CurrentValue),
+        12,
+        Theme.Purple,
+        Enum.Font.GothamBold
+    )
+
+    ValueLabel.Name = "Value"
+    ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    ValueLabel.Position = UDim2.new(1, -75, 0, 5)
+    ValueLabel.Size = UDim2.fromOffset(65, 20)
+
+    local Bar = Create("Frame", {
+        Name = "Bar",
+        Position = UDim2.new(0, 10, 0, 38),
+        Size = UDim2.new(1, -20, 0, 7),
+        BackgroundColor3 = Color3.fromRGB(55, 47, 68),
+        BorderSizePixel = 0
+    }, Container)
+
+    AddCorner(Bar, 5)
+
+    local Fill = Create("Frame", {
+        Name = "Fill",
+        Size = UDim2.new(0, 0, 1, 0),
+        BackgroundColor3 = Theme.Purple,
+        BorderSizePixel = 0
+    }, Bar)
+
+    AddCorner(Fill, 5)
+
+    local Knob = Create("Frame", {
+        Name = "Knob",
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0, 0, 0.5, 0),
+        Size = UDim2.fromOffset(15, 15),
+        BackgroundColor3 = Theme.White,
+        BorderSizePixel = 0,
+        ZIndex = 2
+    }, Bar)
+
+    AddCorner(Knob, 8)
+
+    local Hitbox = Create("TextButton", {
+        Name = "Hitbox",
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(1, 12, 0, 28),
+        BackgroundTransparency = 1,
+        Text = "",
+        AutoButtonColor = false,
+        ZIndex = 3
+    }, Bar)
+
+    local Dragging = false
+
+    local function FormatNumber(Value)
+        if Value == math.floor(Value) then
+            return tostring(math.floor(Value))
+        end
+
+        return string.format("%.3f", Value):gsub("0+$", ""):gsub("%.$", "")
+    end
+
+    local function UpdateVisual()
+        local Alpha = 0
+
+        if Maximum > Minimum then
+            Alpha = (CurrentValue - Minimum) / (Maximum - Minimum)
+        end
+
+        Alpha = math.clamp(Alpha, 0, 1)
+
+        Fill.Size = UDim2.new(Alpha, 0, 1, 0)
+        Knob.Position = UDim2.new(Alpha, 0, 0.5, 0)
+        ValueLabel.Text = FormatNumber(CurrentValue)
+    end
+
+    local function SetValue(Value, FireCallback)
+        Value = tonumber(Value)
+
+        if not Value then
+            return
+        end
+
+        Value = math.clamp(Value, Minimum, Maximum)
+
+        local Steps = math.floor(
+            ((Value - Minimum) / Increment) + 0.5
+        )
+
+        CurrentValue = math.clamp(
+            Minimum + Steps * Increment,
+            Minimum,
+            Maximum
+        )
+
+        UpdateVisual()
+
+        if FireCallback ~= false then
+            local Success, ErrorMessage = pcall(
+                Callback,
+                CurrentValue
+            )
+
+            if not Success then
+                warn("[Nauter Slider Error]:", ErrorMessage)
+            end
+        end
+    end
+
+    local function UpdateFromPosition(X)
+        local Width = Bar.AbsoluteSize.X
+
+        if Width <= 0 then
+            return
+        end
+
+        local Alpha = math.clamp(
+            (X - Bar.AbsolutePosition.X) / Width,
+            0,
+            1
+        )
+
+        SetValue(
+            Minimum + (Maximum - Minimum) * Alpha,
+            true
+        )
+    end
+
+    Hitbox.InputBegan:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton1
+            or Input.UserInputType == Enum.UserInputType.Touch then
+
+            Dragging = true
+            UpdateFromPosition(Input.Position.X)
+        end
+    end)
+
+    local SliderInputConnection =
+        UserInputService.InputChanged:Connect(function(Input)
+            if not Dragging then
+                return
+            end
+
+            if Input.UserInputType == Enum.UserInputType.MouseMovement
+                or Input.UserInputType == Enum.UserInputType.Touch then
+
+                UpdateFromPosition(Input.Position.X)
+            end
+        end)
+
+    local SliderEndConnection =
+        UserInputService.InputEnded:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1
+                or Input.UserInputType == Enum.UserInputType.Touch then
+
+                Dragging = false
+            end
+        end)
+
+    table.insert(Tab.Window.Connections, SliderInputConnection)
+    table.insert(Tab.Window.Connections, SliderEndConnection)
+
+    UpdateVisual()
+
+    return {
+        Instance = Container,
+        Bar = Bar,
+
+        Set = function(_, Value)
+            SetValue(Value, true)
+        end,
+
+        Get = function()
+            return CurrentValue
+        end
+    }
+end
+
+-- INPUT
+function TabMethods:CreateInput(config)
+    config = config or {}
+
+    local Tab = self
+    local Callback = config.Callback or function() end
+
+    local Container = CreateContainer(
+        Tab,
+        config.Name or "Input",
+        66
+    )
+
+    local Title = AddText(
+        Container,
+        tostring(config.Name or "Input"),
+        12,
+        Theme.Text,
+        Enum.Font.GothamMedium
+    )
+
+    Title.Position = UDim2.new(0, 10, 0, 4)
+    Title.Size = UDim2.new(1, -20, 0, 20)
+
+    local TextBox = Create("TextBox", {
+        Name = "TextBox",
+        Position = UDim2.new(0, 8, 0, 29),
+        Size = UDim2.new(1, -16, 0, 29),
+        BackgroundColor3 = Theme.Background,
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0,
+        ClearTextOnFocus = config.RemoveTextAfterFocus == true,
+        PlaceholderText = tostring(config.PlaceholderText or "Enter text..."),
+        PlaceholderColor3 = Theme.SubText,
+        Text = tostring(config.CurrentValue or ""),
+        TextColor3 = Theme.Text,
+        TextSize = 12,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, Container)
+
+    AddCorner(TextBox, 7)
+    AddStroke(TextBox, Theme.Border, 1, 0.65)
+    AddPadding(TextBox, 8, 8, 0, 0)
+
+    local function FireCallback(Value)
+        local Success, ErrorMessage = pcall(
+            Callback,
+            Value
+        )
+
+        if not Success then
+            warn("[Nauter Input Error]:", ErrorMessage)
+        end
+    end
+
+    TextBox.FocusLost:Connect(function(EnterPressed)
+        if config.FireOnEnter and not EnterPressed then
+            return
+        end
+
+        FireCallback(TextBox.Text)
+    end)
+
+    return {
+        Instance = Container,
+        Input = TextBox,
+
+        Set = function(_, Value)
+            TextBox.Text = tostring(Value or "")
+        end,
+
+        Get = function()
+            return TextBox.Text
+        end
+    }
+end
+
+-- DROPDOWN
+function TabMethods:CreateDropdown(config)
+    config = config or {}
+
+    local Tab = self
+    local Callback = config.Callback or function() end
+    local Options = config.Options or {}
+
+    local Multiple = config.MultipleOptions == true
+    local CurrentValue
+
+    if Multiple then
+        CurrentValue = {}
+
+        if type(config.CurrentOption) == "table" then
+            for _, Value in ipairs(config.CurrentOption) do
+                table.insert(CurrentValue, Value)
+            end
+        end
+    else
+        CurrentValue = config.CurrentOption
+
+        if CurrentValue == nil then
+            CurrentValue = Options[1]
+        end
+    end
+
+    local Expanded = false
+    local OptionButtons = {}
+
+    local Container = CreateContainer(
+        Tab,
+        config.Name or "Dropdown",
+        40
+    )
+
+    Container.ClipsDescendants = true
+
+    local HeaderButton = Create("TextButton", {
+        Name = "DropdownHeader",
+        Size = UDim2.new(1, 0, 0, 39),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = false
+    }, Container)
+
+    local Title = AddText(
+        HeaderButton,
+        tostring(config.Name or "Dropdown"),
+        12,
+        Theme.Text,
+        Enum.Font.GothamMedium
+    )
+
+    Title.Position = UDim2.new(0, 10, 0, 0)
+    Title.Size = UDim2.new(0.55, 0, 1, 0)
+
+    local SelectedText = AddText(
+        HeaderButton,
+        "",
+        11,
+        Theme.Purple,
+        Enum.Font.GothamMedium
+    )
+
+    SelectedText.Name = "Selected"
+    SelectedText.TextXAlignment = Enum.TextXAlignment.Right
+    SelectedText.Position = UDim2.new(0.48, 0, 0, 0)
+    SelectedText.Size = UDim2.new(0.42, -5, 1, 0)
+
+    local Arrow = AddText(
+        HeaderButton,
+        "v",
+        13,
+        Theme.SubText,
+        Enum.Font.GothamBold
+    )
+
+    Arrow.TextXAlignment = Enum.TextXAlignment.Center
+    Arrow.Position = UDim2.new(1, -28, 0, 0)
+    Arrow.Size = UDim2.fromOffset(20, 39)
+
+    local OptionsFrame = Create("ScrollingFrame", {
+        Name = "Options",
+        Position = UDim2.new(0, 7, 0, 42),
+        Size = UDim2.new(1, -14, 0, 0),
+        BackgroundColor3 = Theme.Background,
+        BackgroundTransparency = 0.05,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = Theme.Purple,
+        CanvasSize = UDim2.new(),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        ScrollingDirection = Enum.ScrollingDirection.Y,
+        Visible = false
+    }, Container)
+
+    AddCorner(OptionsFrame, 7)
+    AddPadding(OptionsFrame, 5, 5, 5, 5)
+    AddList(OptionsFrame, 4)
+
+    local function IsSelected(Option)
+        if Multiple then
+            for _, Value in ipairs(CurrentValue) do
+                if Value == Option then
+                    return true
+                end
+            end
+
+            return false
+        end
+
+        return CurrentValue == Option
+    end
+
+    local function RefreshSelectedText()
+        if Multiple then
+            SelectedText.Text = #CurrentValue > 0
+                and table.concat(CurrentValue, ", ")
+                or "None"
+        else
+            SelectedText.Text = tostring(CurrentValue or "None")
+        end
+
+        for Option, Button in pairs(OptionButtons) do
+            Button.TextColor3 = IsSelected(Option)
+                and Theme.Purple
+                or Theme.Text
+        end
+    end
+
+    local function FireCallback()
+        local Value
+
+        if Multiple then
+            Value = {}
+
+            for _, Option in ipairs(CurrentValue) do
+                table.insert(Value, Option)
+            end
+        else
+            Value = CurrentValue
+        end
+
+        local Success, ErrorMessage = pcall(
+            Callback,
+            Value
+        )
+
+        if not Success then
+            warn("[Nauter Dropdown Error]:", ErrorMessage)
+        end
+    end
+
+    local function AddOption(Option)
+        Option = tostring(Option)
+
+        local Button = Create("TextButton", {
+            Name = "Option",
+            Size = UDim2.new(1, 0, 0, 29),
+            BackgroundColor3 = Theme.PanelLight,
+            BackgroundTransparency = 0.1,
+            BorderSizePixel = 0,
+            AutoButtonColor = false,
+            Text = Option,
+            TextColor3 = Theme.Text,
+            TextSize = 12,
+            Font = Enum.Font.Gotham,
+            TextXAlignment = Enum.TextXAlignment.Left
+        }, OptionsFrame)
+
+        AddCorner(Button, 6)
+        AddPadding(Button, 8, 8, 0, 0)
+
+        OptionButtons[Option] = Button
+
+        Button.Activated:Connect(function()
+            if Tab.Window.IsDestroyed then
+                return
+            end
+
+            if Multiple then
+                local Found = false
+
+                for Index, Value in ipairs(CurrentValue) do
+                    if Value == Option then
+                        table.remove(CurrentValue, Index)
+                        Found = true
+                        break
+                    end
+                end
+
+                if not Found then
+                    table.insert(CurrentValue, Option)
+                end
+            else
+                CurrentValue = Option
+                Expanded = false
+                OptionsFrame.Visible = false
+                Arrow.Text = "v"
+
+                PlayTween(Container, 0.18, {
+                    Size = UDim2.new(1, 0, 0, 40)
+                })
+            end
+
+            RefreshSelectedText()
+            FireCallback()
+        end)
+    end
+
+    for _, Option in ipairs(Options) do
+        AddOption(Option)
+    end
+
+    local function ToggleExpanded()
+        Expanded = not Expanded
+
+        OptionsFrame.Visible = Expanded
+        Arrow.Text = Expanded and "^" or "v"
+
+        if Expanded then
+            local Count = math.min(#Options, 5)
+            local Height = Count * 33 + 10
+
+            PlayTween(Container, 0.2, {
+                Size = UDim2.new(1, 0, 0, 48 + Height)
+            })
+
+            PlayTween(OptionsFrame, 0.2, {
+                Size = UDim2.new(1, -14, 0, Height)
+            })
+        else
+            PlayTween(Container, 0.2, {
+                Size = UDim2.new(1, 0, 0, 40)
+            })
+
+            PlayTween(OptionsFrame, 0.2, {
+                Size = UDim2.new(1, -14, 0, 0)
+            })
+        end
+    end
+
+    HeaderButton.Activated:Connect(ToggleExpanded)
+
+    RefreshSelectedText()
+
+    return {
+        Instance = Container,
+        Button = HeaderButton,
+        Options = OptionsFrame,
+
+        Set = function(_, Value)
+            if Multiple then
+                CurrentValue = {}
+
+                if type(Value) == "table" then
+                    for _, Item in ipairs(Value) do
+                        table.insert(CurrentValue, Item)
+                    end
+                end
+            else
+                CurrentValue = Value
+            end
+
+            RefreshSelectedText()
+            FireCallback()
+        end,
+
+        Get = function()
+            if not Multiple then
+                return CurrentValue
+            end
+
+            local Copy = {}
+
+            for _, Value in ipairs(CurrentValue) do
+                table.insert(Copy, Value)
+            end
+
+            return Copy
+        end,
+
+        Refresh = function(_, NewOptions)
+            Options = NewOptions or {}
+            OptionButtons = {}
+
+            for _, Child in ipairs(OptionsFrame:GetChildren()) do
+                if Child:IsA("TextButton") then
+                    Child:Destroy()
+                end
+            end
+
+            for _, Option in ipairs(Options) do
+                AddOption(Option)
+            end
+
+            RefreshSelectedText()
+        end
+    }
+end
+
+--========================================
+-- PART 3/6 ENDS HERE
+-- PART 4: KEYBIND & COLOR PICKER
+--========================================
+--========================================
+-- NAUTER LIBRARY
+-- PART 4/6 - KEYBIND & COLOR PICKER
+--========================================
+
+-- KEYBIND
+function TabMethods:CreateKeybind(config)
+    config = config or {}
+
+    local Tab = self
+    local Callback = config.Callback or function() end
+    local CurrentKey = config.CurrentKey or config.Default or Enum.KeyCode.RightShift
+    local Listening = false
+
+    local Container = CreateContainer(
+        Tab,
+        config.Name or "Keybind",
+        42
+    )
+
+    local Title = AddText(
+        Container,
+        tostring(config.Name or "Keybind"),
+        12,
+        Theme.Text,
+        Enum.Font.GothamMedium
+    )
+
+    Title.Position = UDim2.new(0, 10, 0, 0)
+    Title.Size = UDim2.new(1, -115, 1, 0)
+
+    local KeyButton = Create("TextButton", {
+        Name = "KeyButton",
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -8, 0.5, 0),
+        Size = UDim2.fromOffset(100, 27),
+        BackgroundColor3 = Theme.Background,
+        BorderSizePixel = 0,
+        AutoButtonColor = false,
+        Text = CurrentKey.Name,
+        TextColor3 = Theme.Purple,
+        TextSize = 11,
+        Font = Enum.Font.GothamBold
+    }, Container)
+
+    AddCorner(KeyButton, 7)
+    AddStroke(KeyButton, Theme.Border, 1, 0.5)
+
+    local function UpdateKeyText()
+        if typeof(CurrentKey) == "EnumItem" then
+            KeyButton.Text = CurrentKey.Name
+        else
+            KeyButton.Text = tostring(CurrentKey)
+        end
+    end
+
+    local function FireCallback(Input)
+        local Success, ErrorMessage = pcall(
+            Callback,
+            Input,
+            CurrentKey
+        )
+
+        if not Success then
+            warn("[Nauter Keybind Error]:", ErrorMessage)
+        end
+    end
+
+    KeyButton.Activated:Connect(function()
+        if Tab.Window.IsDestroyed then
+            return
+        end
+
+        Listening = true
+        KeyButton.Text = "Press a key..."
+        KeyButton.TextColor3 = Theme.White
+    end)
+
+    local KeyConnection = UserInputService.InputBegan:Connect(function(Input, Processed)
+        if Tab.Window.IsDestroyed then
+            return
+        end
+
+        if Listening then
+            if Input.UserInputType ~= Enum.UserInputType.Keyboard then
+                return
+            end
+
+            CurrentKey = Input.KeyCode
+            Listening = false
+            UpdateKeyText()
+            KeyButton.TextColor3 = Theme.Purple
+            return
+        end
+
+        if Processed then
+            return
+        end
+
+        if Input.UserInputType == Enum.UserInputType.Keyboard
+            and Input.KeyCode == CurrentKey then
+
+            FireCallback(Input)
+        end
+    end)
+
+    table.insert(Tab.Window.Connections, KeyConnection)
+
+    return {
+        Instance = Container,
+        Button = KeyButton,
+
+        Set = function(_, NewKey)
+            if typeof(NewKey) == "EnumItem" then
+                CurrentKey = NewKey
+                Listening = false
+                UpdateKeyText()
+            end
+        end,
+
+        Get = function()
+            return CurrentKey
+        end
+    }
+end
+
+-- COLOR PICKER
+function TabMethods:CreateColorPicker(config)
+    config = config or {}
+
+    local Tab = self
+    local Callback = config.Callback or function() end
+    local CurrentColor = config.Color or config.CurrentColor
+        or Color3.fromRGB(145, 70, 255)
+
+    local Expanded = false
+
+    local Container = CreateContainer(
+        Tab,
+        config.Name or "Color Picker",
+        42
+    )
+
+    Container.ClipsDescendants = true
+
+    local HeaderButton = Create("TextButton", {
+        Name = "ColorHeader",
+        Size = UDim2.new(1, 0, 0, 40),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Text = "",
+        AutoButtonColor = false
+    }, Container)
+
+    local Title = AddText(
+        HeaderButton,
+        tostring(config.Name or "Color Picker"),
+        12,
+        Theme.Text,
+        Enum.Font.GothamMedium
+    )
+
+    Title.Position = UDim2.new(0, 10, 0, 0)
+    Title.Size = UDim2.new(1, -75, 1, 0)
+
+    local Preview = Create("Frame", {
+        Name = "ColorPreview",
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -35, 0.5, 0),
+        Size = UDim2.fromOffset(24, 24),
+        BackgroundColor3 = CurrentColor,
+        BorderSizePixel = 0
+    }, HeaderButton)
+
+    AddCorner(Preview, 7)
+    AddStroke(Preview, Theme.White, 1, 0.6)
+
+    local Arrow = AddText(
+        HeaderButton,
+        "v",
+        13,
+        Theme.SubText,
+        Enum.Font.GothamBold
+    )
+
+    Arrow.TextXAlignment = Enum.TextXAlignment.Center
+    Arrow.Position = UDim2.new(1, -27, 0, 0)
+    Arrow.Size = UDim2.fromOffset(20, 40)
+
+    local PickerPanel = Create("Frame", {
+        Name = "PickerPanel",
+        Position = UDim2.new(0, 8, 0, 44),
+        Size = UDim2.new(1, -16, 0, 90),
+        BackgroundColor3 = Theme.Background,
+        BackgroundTransparency = 0.05,
+        BorderSizePixel = 0
+    }, Container)
+
+    AddCorner(PickerPanel, 8)
+    AddStroke(PickerPanel, Theme.Border, 1, 0.6)
+
+    -- RGB input supports values such as 233, 100, 77.
+    local RGBInput = Create("TextBox", {
+        Name = "RGBInput",
+        Position = UDim2.new(0, 8, 0, 8),
+        Size = UDim2.new(1, -16, 0, 30),
+        BackgroundColor3 = Theme.PanelLight,
+        BorderSizePixel = 0,
+        ClearTextOnFocus = false,
+        PlaceholderText = "233, 100, 77",
+        PlaceholderColor3 = Theme.SubText,
+        Text = "",
+        TextColor3 = Theme.Text,
+        TextSize = 12,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Center
+    }, PickerPanel)
+
+    AddCorner(RGBInput, 7)
+    AddStroke(RGBInput, Theme.Border, 1, 0.65)
+
+    local RandomButton = Create("TextButton", {
+        Name = "RandomColor",
+        Position = UDim2.new(0, 8, 0, 46),
+        Size = UDim2.new(1, -16, 0, 30),
+        BackgroundColor3 = Theme.PurpleDark,
+        BorderSizePixel = 0,
+        AutoButtonColor = false,
+        Text = "Random Color",
+        TextColor3 = Theme.White,
+        TextSize = 12,
+        Font = Enum.Font.GothamMedium
+    }, PickerPanel)
+
+    AddCorner(RandomButton, 7)
+
+    local function FireColorCallback()
+        local Success, ErrorMessage = pcall(
+            Callback,
+            CurrentColor
+        )
+
+        if not Success then
+            warn("[Nauter ColorPicker Error]:", ErrorMessage)
+        end
+    end
+
+    local function SetColor(Color, FireCallback)
+        if typeof(Color) ~= "Color3" then
+            return
+        end
+
+        CurrentColor = Color
+        Preview.BackgroundColor3 = Color
+
+        RGBInput.Text = string.format(
+            "%d, %d, %d",
+            math.floor(Color.R * 255 + 0.5),
+            math.floor(Color.G * 255 + 0.5),
+            math.floor(Color.B * 255 + 0.5)
+        )
+
+        if FireCallback ~= false then
+            FireColorCallback()
+        end
+    end
+
+    local function ParseRGB(Text)
+        local R, G, B = Text:match(
+            "^%s*(%d+)%s*,%s*(%d+)%s*,%s*(%d+)%s*$"
+        )
+
+        if not R or not G or not B then
+            return nil
+        end
+
+        R = tonumber(R)
+        G = tonumber(G)
+        B = tonumber(B)
+
+        if R > 255 or G > 255 or B > 255 then
+            return nil
+        end
+
+        return Color3.fromRGB(R, G, B)
+    end
+
+    RGBInput.FocusLost:Connect(function()
+        local Color = ParseRGB(RGBInput.Text)
+
+        if Color then
+            SetColor(Color, true)
+        else
+            SetColor(CurrentColor, false)
+        end
+    end)
+
+    RandomButton.Activated:Connect(function()
+        local Color = Color3.fromRGB(
+            math.random(0, 255),
+            math.random(0, 255),
+            math.random(0, 255)
+        )
+
+        SetColor(Color, true)
+    end)
+
+    HeaderButton.Activated:Connect(function()
+        Expanded = not Expanded
+
+        Arrow.Text = Expanded and "^" or "v"
+
+        PlayTween(Container, 0.2, {
+            Size = Expanded
+                and UDim2.new(1, 0, 0, 142)
+                or UDim2.new(1, 0, 0, 42)
+        })
+    end)
+
+    SetColor(CurrentColor, false)
+
+    return {
+        Instance = Container,
+        Preview = Preview,
+        Input = RGBInput,
+
+        Set = function(_, Color)
+            SetColor(Color, true)
+        end,
+
+        Get = function()
+            return CurrentColor
+        end
+    }
+end
+
+--========================================
+-- PART 4/6 ENDS HERE
+-- PART 5: NOTIFICATIONS & WINDOW METHODS
+--========================================
+--========================================
+-- NAUTER LIBRARY
+-- PART 6/6 - FINAL INTEGRATION
+--========================================
+
+-- LIBRARY INFORMATION
+Nauter.Name = "Nauter"
+Nauter.Version = "1.0.0"
+Nauter.Theme = Theme
+
+-- CREATE WINDOW ALIAS
+Nauter.CreateWindow = Nauter.CreateWindow
+
+-- VERIFY REQUIRED METHODS
+assert(
+    type(Nauter.CreateWindow) == "function",
+    "[Nauter] CreateWindow is missing"
+)
+
+assert(
+    type(WindowMethods.CreateTab) == "function"
+        or type(WindowMethods.CreateTab) == "nil",
+    "[Nauter] Invalid window methods"
+)
+
+assert(
+    type(TabMethods.CreateButton) == "function",
+    "[Nauter] CreateButton is missing"
+)
+
+assert(
+    type(TabMethods.CreateToggle) == "function",
+    "[Nauter] CreateToggle is missing"
+)
+
+assert(
+    type(TabMethods.CreateSlider) == "function",
+    "[Nauter] CreateSlider is missing"
+)
+
+assert(
+    type(TabMethods.CreateInput) == "function",
+    "[Nauter] CreateInput is missing"
+)
+
+assert(
+    type(TabMethods.CreateDropdown) == "function",
+    "[Nauter] CreateDropdown is missing"
+)
+
+assert(
+    type(TabMethods.CreateKeybind) == "function",
+    "[Nauter] CreateKeybind is missing"
+)
+
+assert(
+    type(TabMethods.CreateColorPicker) == "function",
+    "[Nauter] CreateColorPicker is missing"
+)
+
+assert(
+    type(TabMethods.CreateLabel) == "function",
+    "[Nauter] CreateLabel is missing"
+)
+
+assert(
+    type(TabMethods.CreateDivider) == "function",
+    "[Nauter] CreateDivider is missing"
+)
+
+assert(
+    type(TabMethods.CreateParagraph) == "function",
+    "[Nauter] CreateParagraph is missing"
+)
+
+--========================================
+-- LIBRARY READY
+--========================================
+
+return Nauter
