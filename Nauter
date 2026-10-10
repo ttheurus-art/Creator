@@ -379,6 +379,7 @@ function Nauter:CreateWindow(config)
     Window.CloseButton = CloseButton
 
     -- Tab navigation.
+    -- TAB BAR: HORIZONTAL SCROLL
     local TabBar = Create("ScrollingFrame", {
         Name = "TabBar",
         Position = UDim2.new(0, 10, 0, 52),
@@ -386,10 +387,13 @@ function Nauter:CreateWindow(config)
         BackgroundColor3 = Theme.Panel,
         BackgroundTransparency = 0.15,
         BorderSizePixel = 0,
-        ScrollBarThickness = 2,
+        ScrollBarThickness = 3,
         ScrollBarImageColor3 = Theme.Purple,
         ScrollingDirection = Enum.ScrollingDirection.X,
-        CanvasSize = UDim2.new()
+        AutomaticCanvasSize = Enum.AutomaticSize.X,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ElasticBehavior = Enum.ElasticBehavior.Always,
+        ClipsDescendants = true
     }, Main)
 
     AddCorner(TabBar, 9)
