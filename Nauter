@@ -507,9 +507,10 @@ local Main = Create("Frame", {
     end))
 
     -- Close window.
-    -- Close window (destroy).
 table.insert(Window.Connections, CloseButton.Activated:Connect(function()
-    Window:Destroy()
+    if ScreenGui and ScreenGui.Parent then
+        ScreenGui:Destroy()
+    end
 end))
 
     -- Hover effects.
