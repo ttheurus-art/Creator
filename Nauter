@@ -98,7 +98,7 @@ local function AddButton(parent, text, size, position)
         AutoButtonColor = false,
         Text = text or "",
         TextColor3 = Theme.Text,
-        TextSize = 13,
+        TextSize = 15,
         Font = Enum.Font.GothamMedium
     }, parent)
 
@@ -328,7 +328,7 @@ local Main = Create("Frame", {
     local HeaderTitle = AddText(
         Header,
         Window.Name,
-        15,
+        18,
         Theme.Text,
         Enum.Font.GothamBold
     )
