@@ -1933,6 +1933,295 @@ end
 -- PART 4/6 ENDS HERE
 -- PART 5: NOTIFICATIONS & WINDOW METHODS
 --========================================
+
+--========================================
+-- NAUTER LIBRARY
+-- PART 5/6 - NOTIFICATIONS & WINDOW METHODS
+--========================================
+
+-- SET WINDOW TITLE
+function WindowMethods:SetTitle(NewTitle)
+    if self.IsDestroyed then
+        return
+    end
+
+    self.Name = tostring(NewTitle or "Nauter")
+    self.TitleLabel.Text = self.Name
+end
+
+-- SELECT FIRST AVAILABLE TAB
+function WindowMethods:SelectFirstTab()
+    if self.IsDestroyed then
+        return false
+    end
+
+    local FirstTab = self.Tabs[1]
+
+    if FirstTab then
+        FirstTab.Select()
+        return true
+    end
+
+    return false
+end
+
+-- GET ALL TABS
+function WindowMethods:GetTabs()
+    local Result = {}
+
+    for _, Tab in ipairs(self.Tabs) do
+        table.insert(Result, {
+            Name = Tab.Name,
+            Tab = Tab
+        })
+    end
+
+    return Result
+end
+
+-- NOTIFICATION SYSTEM
+function WindowMethods:Notify(config)
+    config = config or {}
+
+    if self.IsDestroyed then
+        return nil
+    end
+
+    local TitleText = tostring(config.Title or "Nauter")
+    local ContentText = tostring(config.Content or "")
+    local Duration = math.max(
+        tonumber(config.Duration) or 3,
+        0.5
+    )
+
+    self._NotificationCount += 1
+
+    local NotificationId = self._NotificationCount
+    local NotificationHeight = 76
+
+    -- Notification holder.
+    local Holder = self.Gui:FindFirstChild("Notifications")
+
+    if not Holder then
+        Holder = Create("Frame", {
+            Name = "Notifications",
+            AnchorPoint = Vector2.new(1, 0),
+            Position = UDim2.new(1, -12, 0, 12),
+            Size = UDim2.new(0, 240, 1, -24),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            ZIndex = 50
+        }, self.Gui)
+
+        Create("UIListLayout", {
+            FillDirection = Enum.FillDirection.Vertical,
+            HorizontalAlignment = Enum.HorizontalAlignment.Right,
+            VerticalAlignment = Enum.VerticalAlignment.Top,
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 8)
+        }, Holder)
+    end
+
+    local Notification = Create("Frame", {
+        Name = "Notification_" .. NotificationId,
+        Size = UDim2.new(1, 0, 0, NotificationHeight),
+        BackgroundColor3 = Theme.Background,
+        BackgroundTransparency = 0.1,
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+        LayoutOrder = NotificationId,
+        ZIndex = 51
+    }, Holder)
+
+    AddCorner(Notification, 10)
+    AddStroke(Notification, Theme.Border, 1.2, 0.15)
+    AddGradient(Notification)
+
+    local Accent = Create("Frame", {
+        Name = "Accent",
+        Size = UDim2.new(0, 3, 1, -16),
+        Position = UDim2.new(0, 6, 0, 8),
+        BackgroundColor3 = Theme.Purple,
+        BorderSizePixel = 0,
+        ZIndex = 52
+    }, Notification)
+
+    AddCorner(Accent, 3)
+
+    local NotificationTitle = AddText(
+        Notification,
+        TitleText,
+        12,
+        Theme.Text,
+        Enum.Font.GothamBold
+    )
+
+    NotificationTitle.Position = UDim2.new(0, 16, 0, 8)
+    NotificationTitle.Size = UDim2.new(1, -25, 0, 20)
+    NotificationTitle.ZIndex = 52
+
+    local NotificationContent = AddText(
+        Notification,
+        ContentText,
+        11,
+        Theme.SubText,
+        Enum.Font.Gotham
+    )
+
+    NotificationContent.Position = UDim2.new(0, 16, 0, 29)
+    NotificationContent.Size = UDim2.new(1, -25, 0, 31)
+    NotificationContent.TextYAlignment = Enum.TextYAlignment.Top
+    NotificationContent.ZIndex = 52
+
+    local TimerBackground = Create("Frame", {
+        Name = "TimerBackground",
+        Position = UDim2.new(0, 10, 1, -6),
+        Size = UDim2.new(1, -20, 0, 2),
+        BackgroundColor3 = Theme.PanelLight,
+        BorderSizePixel = 0,
+        ZIndex = 52
+    }, Notification)
+
+    AddCorner(TimerBackground, 2)
+
+    local TimerBar = Create("Frame", {
+        Name = "TimerBar",
+        AnchorPoint = Vector2.new(1, 0),
+        Position = UDim2.new(1, 0, 0, 0),
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = Theme.Purple,
+        BorderSizePixel = 0,
+        ZIndex = 53
+    }, TimerBackground)
+
+    AddCorner(TimerBar, 2)
+
+    table.insert(self.Notifications, Notification)
+
+    -- Compact notification entrance.
+    Notification.Position = UDim2.new(0, 30, 0, 0)
+    Notification.BackgroundTransparency = 1
+
+    PlayTween(Notification, 0.22, {
+        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundTransparency = 0.1
+    })
+
+    PlayTween(TimerBar, Duration, {
+        Size = UDim2.new(0, 0, 1, 0)
+    })
+
+    task.delay(Duration, function()
+        if not Notification.Parent then
+            return
+        end
+
+        PlayTween(Notification, 0.2, {
+            Position = UDim2.new(0, 25, 0, 0),
+            BackgroundTransparency = 1
+        })
+
+        task.delay(0.22, function()
+            if Notification.Parent then
+                Notification:Destroy()
+            end
+        end)
+    end)
+
+    return {
+        Instance = Notification,
+
+        Close = function()
+            if Notification.Parent then
+                Notification:Destroy()
+            end
+        end
+    }
+end
+
+-- DESTROY A WINDOW
+function WindowMethods:Destroy()
+    if self.IsDestroyed then
+        return
+    end
+
+    self.IsDestroyed = true
+
+    -- Disconnect tracked events.
+    for _, Connection in ipairs(self.Connections) do
+        pcall(function()
+            Connection:Disconnect()
+        end)
+    end
+
+    table.clear(self.Connections)
+
+    -- Destroy GUI with a short closing animation.
+    local Main = self.Main
+
+    if Main and Main.Parent then
+        local Tween = TweenService:Create(
+            Main,
+            TweenInfo.new(
+                0.25,
+                Enum.EasingStyle.Quint,
+                Enum.EasingDirection.In
+            ),
+            {
+                Size = UDim2.fromOffset(0, 0),
+                BackgroundTransparency = 1
+            }
+        )
+
+        Tween:Play()
+
+        Tween.Completed:Once(function()
+            if self.Gui and self.Gui.Parent then
+                self.Gui:Destroy()
+            end
+        end)
+    elseif self.Gui and self.Gui.Parent then
+        self.Gui:Destroy()
+    end
+end
+
+-- CLOSE ALIAS
+function WindowMethods:Close()
+    self:Destroy()
+end
+
+-- MINIMIZE PROGRAMMATICALLY
+function WindowMethods:Minimize()
+    if self.IsDestroyed or self.IsMinimized then
+        return
+    end
+
+    if self.MinimizeButton then
+        self.MinimizeButton:Activate()
+    end
+end
+
+-- RESTORE PROGRAMMATICALLY
+function WindowMethods:Restore()
+    if self.IsDestroyed or not self.IsMinimized then
+        return
+    end
+
+    if self.FloatingButton then
+        self.FloatingButton:Activate()
+    end
+end
+
+-- GET WINDOW STATE
+function WindowMethods:IsOpen()
+    return not self.IsDestroyed
+end
+
+--========================================
+-- PART 5/6 ENDS HERE
+-- PART 6: FINAL INTEGRATION & RETURN
+--========================================
+
 --========================================
 -- NAUTER LIBRARY
 -- PART 6/6 - FINAL INTEGRATION
