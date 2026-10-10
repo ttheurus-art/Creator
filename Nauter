@@ -379,17 +379,18 @@ local Main = Create("Frame", {
 
     -- Tab navigation.
     local TabBar = Create("ScrollingFrame", {
-        Name = "TabBar",
-        Position = UDim2.new(0, 10, 0, 52),
-        Size = UDim2.new(1, -20, 0, 35),
-        BackgroundColor3 = Theme.Panel,
-        BackgroundTransparency = 0.15,
-        BorderSizePixel = 0,
-        ScrollBarThickness = 2,
-        ScrollBarImageColor3 = Theme.Purple,
-        ScrollingDirection = Enum.ScrollingDirection.X,
-        CanvasSize = UDim2.new()
-    }, Main)
+    Name = "TabBar",
+    Position = UDim2.new(0, 10, 0, 52),
+    Size = UDim2.new(1, -20, 0, 35),
+    BackgroundColor3 = Theme.Panel,
+    BackgroundTransparency = 0.15,
+    BorderSizePixel = 0,
+    ScrollBarThickness = 2,
+    ScrollBarImageColor3 = Theme.Purple,
+    ScrollingDirection = Enum.ScrollingDirection.X,
+    CanvasSize = UDim2.new(0, 0, 0, 0),
+    AutomaticCanvasSize = Enum.AutomaticSize.X
+}, Main)
 
     AddCorner(TabBar, 9)
 
@@ -403,17 +404,6 @@ local Main = Create("Frame", {
 
     Window.TabBar = TabBar
     Window.TabLayout = TabLayout
-
-    table.insert(Window.Connections, TabLayout:GetPropertyChangedSignal(
-        "AbsoluteContentSize"
-    ):Connect(function()
-        TabBar.CanvasSize = UDim2.new(
-            0,
-            TabLayout.AbsoluteContentSize.X + 10,
-            0,
-            0
-        )
-    end))
 
     -- Content area.
     local Content = Create("Frame", {
