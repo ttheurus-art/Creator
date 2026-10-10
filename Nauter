@@ -247,16 +247,16 @@ function Nauter:CreateWindow(config)
     })
 
     -- Main window.
-    local Main = Create("Frame", {
-        Name = "Main",
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(520, 370),
-        BackgroundColor3 = Theme.Background,
-        BackgroundTransparency = 0.1,
-        BorderSizePixel = 0,
-        ClipsDescendants = true
-    }, ScreenGui)
+local Main = Create("Frame", {
+    Name = "Main",
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.fromScale(0.5, 0.5),
+    Size = UDim2.new(0, 650, 0, 370),
+    BackgroundColor3 = Theme.Background,
+    BackgroundTransparency = 0.1,
+    BorderSizePixel = 0,
+    ClipsDescendants = true
+}, ScreenGui)
 
     Window.Main = Main
 
