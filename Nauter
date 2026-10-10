@@ -1,6 +1,6 @@
 
--- NAUTER GUI | BASE LIBRARY UI
--- Responsive: Mobile / Tablet / PC
+-- NAUTER LIBRARY | COMPACT EDITION
+-- Mobile / Tablet / PC
 
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -9,17 +9,18 @@ local TweenService = game:GetService("TweenService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
+-- CLEAN OLD GUI
 local Old = PlayerGui:FindFirstChild("Nauter")
 if Old then Old:Destroy() end
 
 local C = {
-    Background = Color3.fromRGB(9, 8, 14),
-    Panel = Color3.fromRGB(19, 16, 29),
+    Background = Color3.fromRGB(12, 10, 18),
+    Panel = Color3.fromRGB(23, 19, 33),
     Purple = Color3.fromRGB(145, 65, 255),
     Neon = Color3.fromRGB(190, 110, 255),
     White = Color3.fromRGB(245, 240, 255),
-    Muted = Color3.fromRGB(155, 145, 175),
-    Off = Color3.fromRGB(58, 53, 70)
+    Muted = Color3.fromRGB(165, 155, 185),
+    Off = Color3.fromRGB(65, 58, 78)
 }
 
 local function Make(class, props, parent)
@@ -31,20 +32,21 @@ local function Make(class, props, parent)
     return obj
 end
 
-local function Round(obj, size)
+local function Round(obj, radius)
     Make("UICorner", {
-        CornerRadius = UDim.new(0, size)
+        CornerRadius = UDim.new(0, radius)
     }, obj)
 end
 
-local function Outline(obj, color)
+local function Stroke(obj, color)
     Make("UIStroke", {
         Color = color,
         Thickness = 1,
-        Transparency = 0.25
+        Transparency = 0.2
     }, obj)
 end
 
+-- GUI
 local Gui = Make("ScreenGui", {
     Name = "Nauter",
     ResetOnSpawn = false,
@@ -52,37 +54,41 @@ local Gui = Make("ScreenGui", {
     ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 }, PlayerGui)
 
--- WINDOW
 local Main = Make("Frame", {
     Name = "Window",
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.new(0.5, 0, 0.5, 0),
+    Size = UDim2.fromOffset(480, 360),
     BackgroundColor3 = C.Background,
+    BackgroundTransparency = 0.1,
     BorderSizePixel = 0,
     ClipsDescendants = true
 }, Gui)
 
-Round(Main, 14)
-Outline(Main, C.Purple)
+Round(Main, 16)
+Stroke(Main, C.Purple)
 
 Make("UIGradient", {
     Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, C.Background),
-        ColorSequenceKeypoint.new(0.55, Color3.fromRGB(23, 12, 39)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(54, 20, 91))
+        ColorSequenceKeypoint.new(0.55, Color3.fromRGB(27, 15, 43)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(53, 23, 83))
     }),
     Rotation = 35
 }, Main)
 
--- RESPONSIVE SIZING
+-- RESPONSIVE SIZE
 local Camera = workspace.CurrentCamera
 
 local function Resize()
-    local v = Camera.ViewportSize
-    local w = v.X < 600 and 0.94
-        or v.X < 1000 and 0.82 or 0.70
-    local h = math.min(v.Y * 0.76, 540)
+    Camera = workspace.CurrentCamera
+    if not Camera then return end
 
-    Main.Size = UDim2.new(w, 0, 0, h)
-    Main.Position = UDim2.new((1-w)/2, 0, 0.5, -h/2)
+    local v = Camera.ViewportSize
+    local w = math.min(480, v.X * 0.92)
+    local h = math.min(360, v.Y * 0.78)
+
+    Main.Size = UDim2.fromOffset(w, h)
 end
 
 Resize()
@@ -90,58 +96,63 @@ Camera:GetPropertyChangedSignal("ViewportSize"):Connect(Resize)
 
 -- HEADER
 local Header = Make("Frame", {
-    Size = UDim2.new(1, 0, 0, 48),
+    Name = "Header",
+    Size = UDim2.new(1, 0, 0, 44),
     BackgroundColor3 = C.Panel,
     BackgroundTransparency = 0.1,
     BorderSizePixel = 0
 }, Main)
 
 local Logo = Make("TextLabel", {
-    Position = UDim2.new(0, 12, 0, 5),
-    Size = UDim2.new(0, 34, 0, 34),
+    Position = UDim2.new(0, 10, 0, 5),
+    Size = UDim2.fromOffset(32, 32),
     BackgroundColor3 = C.Purple,
     Text = "N",
     TextColor3 = C.White,
     Font = Enum.Font.GothamBold,
-    TextSize = 21
+    TextSize = 20
 }, Header)
-Round(Logo, 9)
+
+Round(Logo, 10)
 
 Make("TextLabel", {
-    Position = UDim2.new(0, 54, 0, 0),
-    Size = UDim2.new(0.5, 0, 1, 0),
+    Position = UDim2.new(0, 50, 0, 0),
+    Size = UDim2.new(0.55, 0, 1, 0),
     BackgroundTransparency = 1,
     Text = "NAUTER",
     TextColor3 = C.White,
     Font = Enum.Font.GothamBold,
-    TextSize = 18,
+    TextSize = 16,
     TextXAlignment = Enum.TextXAlignment.Left
 }, Header)
 
 local Min = Make("TextButton", {
-    Position = UDim2.new(1, -78, 0, 8),
-    Size = UDim2.new(0, 30, 0, 30),
+    Position = UDim2.new(1, -72, 0, 7),
+    Size = UDim2.fromOffset(28, 28),
     BackgroundColor3 = C.Off,
     Text = "−",
     TextColor3 = C.White,
     Font = Enum.Font.GothamBold,
-    TextSize = 19
+    TextSize = 18
 }, Header)
-Round(Min, 8)
+Round(Min, 9)
 
 local Exit = Make("TextButton", {
-    Position = UDim2.new(1, -40, 0, 8),
-    Size = UDim2.new(0, 30, 0, 30),
+    Position = UDim2.new(1, -37, 0, 7),
+    Size = UDim2.fromOffset(28, 28),
     BackgroundColor3 = Color3.fromRGB(120, 40, 75),
     Text = "×",
     TextColor3 = C.White,
     Font = Enum.Font.GothamBold,
-    TextSize = 20
+    TextSize = 19
 }, Header)
-Round(Exit, 8)
+Round(Exit, 9)
 
 -- DRAG SUPPORT
-local dragging, dragStart, startPos
+local dragging = false
+local dragStart
+local startPos
+local dragInput
 
 Header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -149,6 +160,7 @@ Header.InputBegan:Connect(function(input)
         dragging = true
         dragStart = input.Position
         startPos = Main.Position
+        dragInput = input
     end
 end)
 
@@ -157,49 +169,58 @@ UIS.InputChanged:Connect(function(input)
         input.UserInputType == Enum.UserInputType.MouseMovement
         or input.UserInputType == Enum.UserInputType.Touch
     ) then
-        local d = input.Position - dragStart
+        local delta = input.Position - dragStart
+
         Main.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + d.X,
-            startPos.Y.Scale, startPos.Y.Offset + d.Y
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
         )
     end
 end)
 
 UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
+    if input == dragInput
+    or input.UserInputType == Enum.UserInputType.MouseButton1
     or input.UserInputType == Enum.UserInputType.Touch then
         dragging = false
+        dragInput = nil
     end
 end)
 
 -- BODY
 local Body = Make("Frame", {
-    Position = UDim2.new(0, 0, 0, 48),
-    Size = UDim2.new(1, 0, 1, -48),
+    Position = UDim2.new(0, 0, 0, 44),
+    Size = UDim2.new(1, 0, 1, -44),
     BackgroundTransparency = 1
 }, Main)
 
 local Sidebar = Make("Frame", {
-    Size = UDim2.new(0, 105, 1, 0),
+    Name = "Tabs",
+    Size = UDim2.new(0, 100, 1, 0),
     BackgroundColor3 = C.Panel,
-    BackgroundTransparency = 0.12,
+    BackgroundTransparency = 0.1,
     BorderSizePixel = 0
 }, Body)
 
+Round(Sidebar, 8)
+
+Make("UIPadding", {
+    PaddingTop = UDim.new(0, 10),
+    PaddingLeft = UDim.new(0, 7),
+    PaddingRight = UDim.new(0, 7)
+}, Sidebar)
+
 Make("UIListLayout", {
-    Padding = UDim.new(0, 7),
+    Padding = UDim.new(0, 6),
     SortOrder = Enum.SortOrder.LayoutOrder
 }, Sidebar)
 
-Make("UIPadding", {
-    PaddingTop = UDim.new(0, 12),
-    PaddingLeft = UDim.new(0, 8),
-    PaddingRight = UDim.new(0, 8)
-}, Sidebar)
-
 local Content = Make("ScrollingFrame", {
-    Position = UDim2.new(0, 113, 0, 0),
-    Size = UDim2.new(1, -121, 1, 0),
+    Name = "Content",
+    Position = UDim2.new(0, 108, 0, 0),
+    Size = UDim2.new(1, -116, 1, 0),
     BackgroundTransparency = 1,
     BorderSizePixel = 0,
     ScrollBarThickness = 3,
@@ -208,319 +229,34 @@ local Content = Make("ScrollingFrame", {
     CanvasSize = UDim2.new()
 }, Body)
 
-Make("UIListLayout", {
-    Padding = UDim.new(0, 8),
+Make("UIPadding", {
+    PaddingTop = UDim.new(0, 9),
+    PaddingLeft = UDim.new(0, 8),
+    PaddingRight = UDim.new(0, 8),
+    PaddingBottom = UDim.new(0, 10)
+}, Content)
+
+local ContentLayout = Make("UIListLayout", {
+    Padding = UDim.new(0, 7),
     SortOrder = Enum.SortOrder.LayoutOrder
 }, Content)
 
-Make("UIPadding", {
-    PaddingTop = UDim.new(0, 10),
-    PaddingLeft = UDim.new(0, 9),
-    PaddingRight = UDim.new(0, 9),
-    PaddingBottom = UDim.new(0, 12)
-}, Content)
-
--- MOBILE SIDEBAR
-local function AdaptLayout()
-    local mobile = Camera.ViewportSize.X < 500
-
-    Sidebar.Size = UDim2.new(0, mobile and 74 or 105, 1, 0)
-    Content.Position = UDim2.new(0, mobile and 82 or 113, 0, 0)
-    Content.Size = UDim2.new(1, -(mobile and 90 or 121), 1, 0)
-
-    for _, b in ipairs(Sidebar:GetChildren()) do
-        if b:IsA("TextButton") then
-            b.TextSize = mobile and 10 or 12
-        end
-    end
-end
-
-local Pages = {}
-local Current = "Home"
-
-local function Clear()
-    for _, v in ipairs(Content:GetChildren()) do
-        if v:IsA("GuiObject")
-        and not v:IsA("UIListLayout")
-        and not v:IsA("UIPadding") then
-            v:Destroy()
-        end
-    end
-end
-
-local function Section(text)
-    Make("TextLabel", {
-        Size = UDim2.new(1, -4, 0, 26),
-        BackgroundTransparency = 1,
-        Text = string.upper(text),
-        TextColor3 = C.Neon,
-        Font = Enum.Font.GothamBold,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left
-    }, Content)
-end
-
-local function Button(text, callback)
-    local b = Make("TextButton", {
-        Size = UDim2.new(1, -4, 0, 42),
-        BackgroundColor3 = C.Panel,
-        Text = text,
-        TextColor3 = C.White,
-        Font = Enum.Font.GothamMedium,
-        TextSize = 13,
-        AutoButtonColor = false
-    }, Content)
-
-    Round(b, 9)
-    Outline(b, C.Purple)
-
-    b.Activated:Connect(function()
-        TweenService:Create(b, TweenInfo.new(0.12), {
-            BackgroundColor3 = C.Purple
-        }):Play()
-
-        task.delay(0.15, function()
-            if b.Parent then
-                b.BackgroundColor3 = C.Panel
-            end
-        end)
-
-        if callback then callback() end
-    end)
-
-    return b
-end
-
-local function Toggle(text, default, callback)
-    local value = default == true
-
-    local b = Make("TextButton", {
-        Size = UDim2.new(1, -4, 0, 44),
-        BackgroundColor3 = C.Panel,
-        Text = "",
-        AutoButtonColor = false
-    }, Content)
-    Round(b, 9)
-
-    Make("TextLabel", {
-        Position = UDim2.new(0, 10, 0, 0),
-        Size = UDim2.new(1, -65, 1, 0),
-        BackgroundTransparency = 1,
-        Text = text,
-        TextColor3 = C.White,
-        Font = Enum.Font.GothamMedium,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left
-    }, b)
-
-    local switch = Make("Frame", {
-        Position = UDim2.new(1, -49, 0.5, -10),
-        Size = UDim2.new(0, 38, 0, 20),
-        BackgroundColor3 = value and C.Purple or C.Off
-    }, b)
-    Round(switch, 20)
-
-    local dot = Make("Frame", {
-        Position = value and UDim2.new(1, -18, 0, 2)
-            or UDim2.new(0, 2, 0, 2),
-        Size = UDim2.new(0, 16, 0, 16),
-        BackgroundColor3 = C.White
-    }, switch)
-    Round(dot, 20)
-
-    b.Activated:Connect(function()
-        value = not value
-        switch.BackgroundColor3 = value and C.Purple or C.Off
-        dot.Position = value and UDim2.new(1, -18, 0, 2)
-            or UDim2.new(0, 2, 0, 2)
-
-        if callback then callback(value) end
-    end)
-end
-
-local function Slider(text, min, max, default, callback)
-    local value = default
-
-    local box = Make("Frame", {
-        Size = UDim2.new(1, -4, 0, 65),
-        BackgroundColor3 = C.Panel
-    }, Content)
-    Round(box, 9)
-
-    local label = Make("TextLabel", {
-        Position = UDim2.new(0, 10, 0, 5),
-        Size = UDim2.new(1, -20, 0, 22),
-        BackgroundTransparency = 1,
-        Text = text .. ": " .. value,
-        TextColor3 = C.White,
-        Font = Enum.Font.GothamMedium,
-        TextSize = 12,
-        TextXAlignment = Enum.TextXAlignment.Left
-    }, box)
-
-    local bar = Make("Frame", {
-        Position = UDim2.new(0, 10, 0, 40),
-        Size = UDim2.new(1, -20, 0, 6),
-        BackgroundColor3 = C.Off
-    }, box)
-    Round(bar, 8)
-
-    local fill = Make("Frame", {
-        Size = UDim2.new((value-min)/(max-min), 0, 1, 0),
-        BackgroundColor3 = C.Purple
-    }, bar)
-    Round(fill, 8)
-
-    local hit = Make("TextButton", {
-        Position = UDim2.new(0, 0, 0, 28),
-        Size = UDim2.new(1, 0, 0, 32),
-        BackgroundTransparency = 1,
-        Text = ""
-    }, box)
-
-    local function Set(x)
-        local width = bar.AbsoluteSize.X
-        if width <= 0 then return end
-
-        value = math.floor(min + math.clamp(
-            (x - bar.AbsolutePosition.X) / width, 0, 1
-        ) * (max-min) + 0.5)
-
-        fill.Size = UDim2.new((value-min)/(max-min), 0, 1, 0)
-        label.Text = text .. ": " .. value
-
-        if callback then callback(value) end
-    end
-
-    local active = false
-
-    hit.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch
-        or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            active = true
-            Set(input.Position.X)
-        end
-    end)
-
-    UIS.InputChanged:Connect(function(input)
-        if active and (
-            input.UserInputType == Enum.UserInputType.Touch
-            or input.UserInputType == Enum.UserInputType.MouseMovement
-        ) then
-            Set(input.Position.X)
-        end
-    end)
-
-    UIS.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch
-        or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            active = false
-        end
-    end)
-end
-
--- HOME PAGE
-Pages.Home = function()
-    Section("Dashboard")
-
-    Button("Nauter GUI Loaded", function()
-        -- No console output
-    end)
-
-    Button("Player Information", function()
-        -- No console output
-    end)
-end
-
--- CONTROLS PAGE
-Pages.Controls = function()
-    Section("Controls")
-
-    Toggle("Example Toggle", false, function(v)
-        -- Toggle callback
-    end)
-
-    Toggle("Second Toggle", false, function(v)
-        -- Toggle callback
-    end)
-
-    Slider("Power", 1, 100, 50, function(v)
-        -- Power callback
-    end)
-
-    Slider("Speed", 1, 10, 5, function(v)
-        -- Speed callback
-    end)
-end
-
--- SETTINGS PAGE
-Pages.Settings = function()
-    Section("Settings")
-
-    Button("Reset Window Position", function()
-        Resize()
-    end)
-
-    Button("Hide Window", function()
-        Main.Visible = false
-        Show.Visible = true
-    end)
-
-    Button("Close Nauter", function()
-        Gui:Destroy()
-    end)
-end
-
--- PAGE NAVIGATION
-local function OpenPage(name)
-    Current = name
-    Clear()
-    Pages[name]()
-
-    for _, b in ipairs(Sidebar:GetChildren()) do
-        if b:IsA("TextButton") then
-            b.BackgroundColor3 =
-                b.Name == name and C.Purple or C.Panel
-        end
-    end
-
-    Content.CanvasPosition = Vector2.new(0, 0)
-end
-
-for i, name in ipairs({"Home", "Controls", "Settings"}) do
-    local b = Make("TextButton", {
-        Name = name,
-        Size = UDim2.new(1, 0, 0, 38),
-        BackgroundColor3 = C.Panel,
-        Text = name,
-        TextColor3 = C.White,
-        Font = Enum.Font.GothamBold,
-        TextSize = 12,
-        LayoutOrder = i
-    }, Sidebar)
-
-    Round(b, 8)
-
-    b.Activated:Connect(function()
-        OpenPage(name)
-    end)
-end
-
--- SHOW / HIDE
+-- FLOATING SHOW BUTTON
 local Show = Make("TextButton", {
     Name = "FloatingButton",
-    Size = UDim2.new(0, 48, 0, 48),
-    Position = UDim2.new(0, 12, 0.5, -24),
+    Size = UDim2.fromOffset(46, 46),
+    Position = UDim2.new(0, 12, 0.5, -23),
     BackgroundColor3 = C.Purple,
+    BackgroundTransparency = 0.05,
     Text = "N",
     TextColor3 = C.White,
     Font = Enum.Font.GothamBold,
-    TextSize = 22,
+    TextSize = 21,
     Visible = false
 }, Gui)
 
-Round(Show, 24)
-Outline(Show, C.Neon)
+Round(Show, 23)
+Stroke(Show, C.Neon)
 
 Min.Activated:Connect(function()
     Main.Visible = false
@@ -536,9 +272,360 @@ Exit.Activated:Connect(function()
     Gui:Destroy()
 end)
 
-Camera:GetPropertyChangedSignal("ViewportSize"):Connect(AdaptLayout)
+-- LIBRARY API
+local Nauter = {}
+local Tabs = {}
+local SelectedTab
 
-AdaptLayout()
-OpenPage("Home")
+local function ClearContent()
+    for _, child in ipairs(Content:GetChildren()) do
+        if child ~= ContentLayout
+        and not child:IsA("UIPadding") then
+            child:Destroy()
+        end
+    end
+end
+
+local function SelectTab(tab)
+    SelectedTab = tab
+    ClearContent()
+
+    for _, item in ipairs(Tabs) do
+        item.Button.BackgroundColor3 =
+            item == tab and C.Purple or C.Panel
+    end
+
+    tab.Render()
+    Content.CanvasPosition = Vector2.new(0, 0)
+end
+
+function Nauter:CreateTab(name)
+    local tab = {
+        Name = name,
+        Items = {}
+    }
+
+    local button = Make("TextButton", {
+        Name = name,
+        Size = UDim2.new(1, 0, 0, 34),
+        BackgroundColor3 = C.Panel,
+        BackgroundTransparency = 0.05,
+        Text = name,
+        TextColor3 = C.White,
+        Font = Enum.Font.GothamBold,
+        TextSize = 11,
+        TextTruncate = Enum.TextTruncate.AtEnd,
+        AutoButtonColor = false
+    }, Sidebar)
+
+    Round(button, 9)
+
+    tab.Button = button
+
+    function tab:Render()
+        for _, item in ipairs(self.Items) do
+            item()
+        end
+    end
+
+    button.Activated:Connect(function()
+        SelectTab(tab)
+    end)
+
+    table.insert(Tabs, tab)
+
+    if not SelectedTab then
+        SelectTab(tab)
+    end
+
+    local function AddItem(callback)
+        table.insert(tab.Items, callback)
+        if SelectedTab == tab then
+            ClearContent()
+            tab:Render()
+        end
+    end
+
+    function tab:CreateSection(text)
+        AddItem(function()
+            Make("TextLabel", {
+                Size = UDim2.new(1, -3, 0, 24),
+                BackgroundTransparency = 1,
+                Text = string.upper(text),
+                TextColor3 = C.Neon,
+                Font = Enum.Font.GothamBold,
+                TextSize = 11,
+                TextXAlignment = Enum.TextXAlignment.Left
+            }, Content)
+        end)
+    end
+
+    function tab:CreateParagraph(options)
+        AddItem(function()
+            local box = Make("Frame", {
+                Size = UDim2.new(1, -3, 0, 66),
+                BackgroundColor3 = C.Panel,
+                BackgroundTransparency = 0.05
+            }, Content)
+            Round(box, 10)
+
+            Make("TextLabel", {
+                Position = UDim2.new(0, 10, 0, 6),
+                Size = UDim2.new(1, -20, 0, 19),
+                BackgroundTransparency = 1,
+                Text = options.Title or "Paragraph",
+                TextColor3 = C.Neon,
+                Font = Enum.Font.GothamBold,
+                TextSize = 12,
+                TextXAlignment = Enum.TextXAlignment.Left
+            }, box)
+
+            Make("TextLabel", {
+                Position = UDim2.new(0, 10, 0, 27),
+                Size = UDim2.new(1, -20, 0, 32),
+                BackgroundTransparency = 1,
+                Text = options.Content or "",
+                TextColor3 = C.Muted,
+                Font = Enum.Font.Gotham,
+                TextSize = 11,
+                TextWrapped = true,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top
+            }, box)
+        end)
+    end
+
+    function tab:CreateButton(options)
+        AddItem(function()
+            local b = Make("TextButton", {
+                Size = UDim2.new(1, -3, 0, 38),
+                BackgroundColor3 = C.Panel,
+                BackgroundTransparency = 0.05,
+                Text = options.Name or "Button",
+                TextColor3 = C.White,
+                Font = Enum.Font.GothamMedium,
+                TextSize = 12,
+                AutoButtonColor = false
+            }, Content)
+
+            Round(b, 10)
+            Stroke(b, C.Purple)
+
+            b.Activated:Connect(function()
+                TweenService:Create(b, TweenInfo.new(0.1), {
+                    BackgroundColor3 = C.Purple
+                }):Play()
+
+                task.delay(0.15, function()
+                    if b.Parent then
+                        b.BackgroundColor3 = C.Panel
+                    end
+                end)
+
+                if options.Callback then
+                    options.Callback()
+                end
+            end)
+        end)
+    end
+
+    function tab:CreateToggle(options)
+        local value = options.Default == true
+        local control = {}
+
+        function control:Set(newValue)
+            value = newValue == true
+            if control.Refresh then
+                control.Refresh()
+            end
+            if options.Callback then
+                options.Callback(value)
+            end
+        end
+
+        AddItem(function()
+            local b = Make("TextButton", {
+                Size = UDim2.new(1, -3, 0, 40),
+                BackgroundColor3 = C.Panel,
+                BackgroundTransparency = 0.05,
+                Text = "",
+                AutoButtonColor = false
+            }, Content)
+
+            Round(b, 10)
+
+            Make("TextLabel", {
+                Position = UDim2.new(0, 10, 0, 0),
+                Size = UDim2.new(1, -65, 1, 0),
+                BackgroundTransparency = 1,
+                Text = options.Name or "Toggle",
+                TextColor3 = C.White,
+                Font = Enum.Font.GothamMedium,
+                TextSize = 11,
+                TextXAlignment = Enum.TextXAlignment.Left
+            }, b)
+
+            local switch = Make("Frame", {
+                Position = UDim2.new(1, -43, 0.5, -9),
+                Size = UDim2.fromOffset(33, 18),
+                BackgroundColor3 = value and C.Purple or C.Off
+            }, b)
+            Round(switch, 20)
+
+            local dot = Make("Frame", {
+                Position = value and UDim2.new(1, -16, 0, 2)
+                    or UDim2.new(0, 2, 0, 2),
+                Size = UDim2.fromOffset(14, 14),
+                BackgroundColor3 = C.White
+            }, switch)
+            Round(dot, 20)
+
+            function control.Refresh()
+                if not b.Parent then return end
+                switch.BackgroundColor3 =
+                    value and C.Purple or C.Off
+                dot.Position = value
+                    and UDim2.new(1, -16, 0, 2)
+                    or UDim2.new(0, 2, 0, 2)
+            end
+
+            b.Activated:Connect(function()
+                control:Set(not value)
+            end)
+        end)
+
+        return control
+    end
+
+    function tab:CreateSlider(options)
+        local min = options.Min or 0
+        local max = options.Max or 100
+        assert(max > min, "Slider Max must exceed Min")
+
+        local value = math.clamp(
+            options.Default or min, min, max
+        )
+
+        local control = {}
+
+        function control:Set(newValue)
+            value = math.clamp(
+                math.floor(newValue + 0.5), min, max
+            )
+            if control.Refresh then
+                control.Refresh()
+            end
+            if options.Callback then
+                options.Callback(value)
+            end
+        end
+
+        AddItem(function()
+            local box = Make("Frame", {
+                Size = UDim2.new(1, -3, 0, 60),
+                BackgroundColor3 = C.Panel,
+                BackgroundTransparency = 0.05
+            }, Content)
+            Round(box, 10)
+
+            local label = Make("TextLabel", {
+                Position = UDim2.new(0, 10, 0, 5),
+                Size = UDim2.new(1, -20, 0, 19),
+                BackgroundTransparency = 1,
+                Text = (options.Name or "Slider") .. ": " .. value,
+                TextColor3 = C.White,
+                Font = Enum.Font.GothamMedium,
+                TextSize = 11,
+                TextXAlignment = Enum.TextXAlignment.Left
+            }, box)
+
+            local bar = Make("Frame", {
+                Position = UDim2.new(0, 10, 0, 37),
+                Size = UDim2.new(1, -20, 0, 6),
+                BackgroundColor3 = C.Off
+            }, box)
+            Round(bar, 5)
+
+            local fill = Make("Frame", {
+                Size = UDim2.new(
+                    (value - min) / (max - min), 0, 1, 0
+                ),
+                BackgroundColor3 = C.Purple
+            }, bar)
+            Round(fill, 5)
+
+            local hit = Make("TextButton", {
+                Position = UDim2.new(0, 0, 0, 27),
+                Size = UDim2.new(1, 0, 0, 28),
+                BackgroundTransparency = 1,
+                Text = ""
+            }, box)
+
+            local function SetFromX(x)
+                local width = bar.AbsoluteSize.X
+                if width <= 0 then return end
+
+                control:Set(min + math.clamp(
+                    (x - bar.AbsolutePosition.X) / width,
+                    0, 1
+                ) * (max - min))
+            end
+
+            local active = false
+
+            hit.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Touch
+                or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    active = true
+                    SetFromX(input.Position.X)
+                end
+            end)
+
+            UIS.InputChanged:Connect(function(input)
+                if active and (
+                    input.UserInputType == Enum.UserInputType.Touch
+                    or input.UserInputType == Enum.UserInputType.MouseMovement
+                ) then
+                    SetFromX(input.Position.X)
+                end
+            end)
+
+            UIS.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Touch
+                or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    active = false
+                end
+            end)
+
+            function control.Refresh()
+                if not box.Parent then return end
+                fill.Size = UDim2.new(
+                    (value - min) / (max - min), 0, 1, 0
+                )
+                label.Text = (options.Name or "Slider") .. ": " .. value
+            end
+        end)
+
+        return control
+    end
+
+    return tab
+end
+
+-- PUBLIC API
+function Nauter:Destroy()
+    Gui:Destroy()
+end
+
+function Nauter:SetVisible(state)
+    Main.Visible = state == true
+    Show.Visible = not Main.Visible
+end
+
+function Nauter:GetGui()
+    return Gui
+end
 
 print("Your Nauter Library Is Ready!")
+
+return Nauter
