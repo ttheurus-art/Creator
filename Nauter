@@ -460,6 +460,12 @@ AddCorner(MinimizeButton, 8)
     AddStroke(FloatingButton, Theme.Purple, 1.5, 0)
 
     Window.FloatingButton = FloatingButton
+    -- DRAG NAUTER FLOATING LOGO (MOBILE + PC)
+ConnectDrag(
+    FloatingButton,
+    FloatingButton,
+    Window.Connections
+)
 
     -- Save the original window dimensions.
     local NormalSize = Main.Size
