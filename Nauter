@@ -724,9 +724,10 @@ function TabMethods:CreateButton(config)
         AutoButtonColor = false,
         Text = tostring(config.Name or "Button"),
         TextColor3 = Theme.Text,
-        TextSize = 16,
+        TextSize = 18,
         Font = Enum.Font.GothamMedium,
-        TextXAlignment = Enum.TextXAlignment.Left
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = Container.ZIndex + 1
     }, Container)
 
     local RightText = Create("TextLabel", {
@@ -740,13 +741,36 @@ function TabMethods:CreateButton(config)
         TextColor3 = Theme.SubText,
         TextSize = 13,
         Font = Enum.Font.Gotham,
-        TextXAlignment = Enum.TextXAlignment.Right
+        TextXAlignment = Enum.TextXAlignment.Right,
+        ZIndex = Container.ZIndex + 2
     }, Container)
 
     Button.Activated:Connect(function()
         if Tab.Window.IsDestroyed then
             return
         end
+
+        PlayTween(
+            Button,
+            TweenInfo.new(0.1),
+            {TextSize = 15}
+        )
+
+        task.delay(0.1, function()
+            if Button.Parent then
+                Button.TextSize = 16
+            end
+        end)
+
+        local Success, ErrorMessage = pcall(Callback)
+
+        if not Success then
+            warn("[Nauter Button Error]:", ErrorMessage)
+        end
+    end)
+
+    return Container
+end
 
         PlayTween(
             Button,
