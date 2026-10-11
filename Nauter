@@ -754,19 +754,19 @@ function TabMethods:CreateButton(config)
             {TextSize = 15}
         )
 
-        task.delay(0.1, function()
+                task.delay(0.1, function()
             if Button.Parent then
                 Button.TextSize = 16
             end
         end)
 
         local Success, ErrorMessage = pcall(function()
-    Callback()
-end)
+            Callback()
+        end)
 
-if not Success then
-    warn("[Nauter Button Error]:", ErrorMessage)
-end
+        if not Success then
+            warn("[Nauter Button Error]:", ErrorMessage)
+        end
     end)
 
     return Container
