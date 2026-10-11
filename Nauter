@@ -702,7 +702,20 @@ local function CreateContainer(Tab, Name, Height)
     return Container
 end
 
-local Button = Create("TextButton", {
+-- BUTTON
+function TabMethods:CreateButton(config)
+    config = config or {}
+
+    local Tab = self
+    local Callback = config.Callback or function() end
+
+    local Container = CreateContainer(
+        Tab,
+        config.Name or "Button",
+        40
+    )
+
+    local Button = Create("TextButton", {
         Name = "ActionButton",
         Size = UDim2.new(1, -20, 1, 0),
         Position = UDim2.new(0, 10, 0, 0),
@@ -711,7 +724,7 @@ local Button = Create("TextButton", {
         AutoButtonColor = false,
         Text = tostring(config.Name or "Button"),
         TextColor3 = Theme.Text,
-        TextSize = 20,
+        TextSize = 16,
         Font = Enum.Font.GothamMedium,
         TextXAlignment = Enum.TextXAlignment.Left
     }, Container)
@@ -736,18 +749,14 @@ local Button = Create("TextButton", {
         end
 
         PlayTween(
-            Container,
-            0.12,
-            {BackgroundColor3 = Theme.PurpleDark}
+            Button,
+            TweenInfo.new(0.1),
+            {TextSize = 15}
         )
 
-        task.delay(0.15, function()
-            if Container.Parent then
-                PlayTween(
-                    Container,
-                    0.12,
-                    {BackgroundColor3 = Theme.PanelLight}
-                )
+        task.delay(0.1, function()
+            if Button.Parent then
+                Button.TextSize = 16
             end
         end)
 
@@ -758,13 +767,7 @@ local Button = Create("TextButton", {
         end
     end)
 
-    return {
-        Instance = Container,
-        Button = Button,
-        SetText = function(_, Text)
-            Button.Text = tostring(Text)
-        end
-    }
+    return Container
 end
 
 -- TOGGLE
