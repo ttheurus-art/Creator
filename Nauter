@@ -760,11 +760,13 @@ function TabMethods:CreateButton(config)
             end
         end)
 
-        local Success, ErrorMessage = pcall(Callback)
+        local Success, ErrorMessage = pcall(function()
+    Callback()
+end)
 
-        if not Success then
-            warn("[Nauter Button Error]:", ErrorMessage)
-        end
+if not Success then
+    warn("[Nauter Button Error]:", ErrorMessage)
+end
     end)
 
     return Container
