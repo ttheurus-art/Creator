@@ -1,6 +1,7 @@
 
--- REMOTE SCANNER | RAYFIELD STYLE
--- Search, Scroll, Refresh, Copy Code
+-- REMOTE SCANNER | BLACK MOBILE UI
+-- Auto Scan | Search | Scroll | Refresh | Copy Code
+-- Draggable Window + Floating Open Button
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,16 +15,16 @@ if OldGui then
     OldGui:Destroy()
 end
 
+-- THEME
 local Theme = {
-    Background = Color3.fromRGB(15, 12, 22),
-    Panel = Color3.fromRGB(24, 19, 35),
-    PanelLight = Color3.fromRGB(33, 26, 47),
-    Purple = Color3.fromRGB(145, 70, 255),
-    PurpleDark = Color3.fromRGB(83, 40, 145),
-    Text = Color3.fromRGB(245, 240, 255),
-    SubText = Color3.fromRGB(165, 155, 185),
-    Border = Color3.fromRGB(75, 53, 105),
-    Blue = Color3.fromRGB(65, 145, 255)
+    Background = Color3.fromRGB(12, 12, 12),
+    Panel = Color3.fromRGB(19, 19, 19),
+    Row = Color3.fromRGB(25, 25, 25),
+    Button = Color3.fromRGB(37, 37, 37),
+    Text = Color3.fromRGB(245, 245, 245),
+    SubText = Color3.fromRGB(160, 160, 160),
+    Border = Color3.fromRGB(55, 55, 55),
+    Green = Color3.fromRGB(110, 220, 140)
 }
 
 local function Create(class, props, parent)
@@ -54,115 +55,94 @@ end
 local Gui = Create("ScreenGui", {
     Name = "RemoteScanner",
     ResetOnSpawn = false,
-    ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+    DisplayOrder = 999
 }, PlayerGui)
 
 local Main = Create("Frame", {
     Name = "Main",
-    Size = UDim2.new(0, 420, 0, 480),
-    Position = UDim2.new(0.5, -210, 0.5, -240),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Size = UDim2.new(0.92, 0, 0.76, 0),
+    Position = UDim2.new(0.5, 0, 0.5, 0),
     BackgroundColor3 = Theme.Background,
     BorderSizePixel = 0,
     ClipsDescendants = true
 }, Gui)
 
-Corner(Main, 12)
-Stroke(Main, Theme.Border, 1)
+Create("UISizeConstraint", {
+    MinSize = Vector2.new(270, 300),
+    MaxSize = Vector2.new(520, 620)
+}, Main)
+
+Corner(Main, 10)
+Stroke(Main, Theme.Border)
 
 -- HEADER
 local Header = Create("Frame", {
     Name = "Header",
-    Size = UDim2.new(1, 0, 0, 48),
+    Size = UDim2.new(1, 0, 0, 44),
     BackgroundColor3 = Theme.Panel,
     BorderSizePixel = 0
 }, Main)
 
-local Logo = Create("TextLabel", {
-    Position = UDim2.new(0, 12, 0, 5),
-    Size = UDim2.new(0, 36, 0, 36),
-    BackgroundColor3 = Theme.PurpleDark,
-    Text = "N",
-    TextColor3 = Theme.Text,
-    TextSize = 21,
-    Font = Enum.Font.GothamBold,
-    BorderSizePixel = 0
-}, Header)
-
-Corner(Logo, 9)
-
 Create("TextLabel", {
-    Position = UDim2.new(0, 57, 0, 0),
+    Position = UDim2.new(0, 13, 0, 0),
     Size = UDim2.new(1, -105, 1, 0),
     BackgroundTransparency = 1,
     Text = "Remote Scanner",
     TextColor3 = Theme.Text,
-    TextSize = 16,
+    TextSize = 15,
     Font = Enum.Font.GothamBold,
     TextXAlignment = Enum.TextXAlignment.Left
 }, Header)
 
-local Close = Create("TextButton", {
-    Position = UDim2.new(1, -40, 0, 8),
+local Minimize = Create("TextButton", {
+    Position = UDim2.new(1, -75, 0, 7),
     Size = UDim2.new(0, 30, 0, 30),
-    BackgroundColor3 = Color3.fromRGB(75, 35, 90),
-    Text = "X",
+    BackgroundColor3 = Theme.Button,
+    Text = "—",
     TextColor3 = Theme.Text,
-    TextSize = 14,
+    TextSize = 17,
     Font = Enum.Font.GothamBold,
     BorderSizePixel = 0
 }, Header)
+Corner(Minimize, 7)
 
+local Close = Create("TextButton", {
+    Position = UDim2.new(1, -39, 0, 7),
+    Size = UDim2.new(0, 30, 0, 30),
+    BackgroundColor3 = Theme.Button,
+    Text = "×",
+    TextColor3 = Theme.Text,
+    TextSize = 20,
+    Font = Enum.Font.Gotham,
+    BorderSizePixel = 0
+}, Header)
 Corner(Close, 7)
 
-Close.MouseButton1Click:Connect(function()
-    Gui:Destroy()
-end)
+-- FLOATING OPEN BUTTON
+local OpenButton = Create("TextButton", {
+    Name = "OpenButton",
+    Size = UDim2.new(0, 58, 0, 46),
+    Position = UDim2.new(0, 15, 0.5, -23),
+    BackgroundColor3 = Theme.Background,
+    Text = "OPEN",
+    TextColor3 = Theme.Text,
+    TextSize = 12,
+    Font = Enum.Font.GothamBold,
+    BorderSizePixel = 0,
+    Visible = false,
+    ZIndex = 10
+}, Gui)
 
--- DRAG
-local dragging = false
-local dragStart
-local startPos
-local dragInput
-
-Header.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-
-        dragging = true
-        dragStart = input.Position
-        startPos = Main.Position
-        dragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and (
-        input.UserInputType == Enum.UserInputType.MouseMovement
-        or input.UserInputType == Enum.UserInputType.Touch
-    ) then
-        local delta = input.Position - dragStart
-
-        Main.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end)
+Corner(OpenButton, 10)
+Stroke(OpenButton, Theme.Border)
 
 -- SEARCH
 local Search = Create("TextBox", {
     Name = "Search",
-    Position = UDim2.new(0, 12, 0, 59),
-    Size = UDim2.new(1, -24, 0, 36),
+    Position = UDim2.new(0, 10, 0, 53),
+    Size = UDim2.new(1, -20, 0, 38),
     BackgroundColor3 = Theme.Panel,
     PlaceholderText = "Search remote name, type, or path...",
     PlaceholderColor3 = Theme.SubText,
@@ -180,21 +160,21 @@ Stroke(Search, Theme.Border)
 -- STATUS
 local Status = Create("TextLabel", {
     Name = "Status",
-    Position = UDim2.new(0, 13, 0, 102),
-    Size = UDim2.new(1, -115, 0, 28),
+    Position = UDim2.new(0, 12, 0, 96),
+    Size = UDim2.new(1, -100, 0, 29),
     BackgroundTransparency = 1,
     Text = "Initializing scanner...",
     TextColor3 = Theme.SubText,
-    TextSize = 11,
+    TextSize = 10,
     Font = Enum.Font.Gotham,
     TextXAlignment = Enum.TextXAlignment.Left,
     TextTruncate = Enum.TextTruncate.AtEnd
 }, Main)
 
 local Refresh = Create("TextButton", {
-    Position = UDim2.new(1, -88, 0, 102),
-    Size = UDim2.new(0, 75, 0, 27),
-    BackgroundColor3 = Theme.PurpleDark,
+    Position = UDim2.new(1, -83, 0, 97),
+    Size = UDim2.new(0, 71, 0, 27),
+    BackgroundColor3 = Theme.Button,
     Text = "Refresh",
     TextColor3 = Theme.Text,
     TextSize = 11,
@@ -203,27 +183,30 @@ local Refresh = Create("TextButton", {
 }, Main)
 
 Corner(Refresh, 7)
+Stroke(Refresh, Theme.Border)
 
 -- REMOTE LIST
 local List = Create("ScrollingFrame", {
     Name = "RemoteList",
-    Position = UDim2.new(0, 12, 0, 137),
-    Size = UDim2.new(1, -24, 1, -149),
+    Position = UDim2.new(0, 10, 0, 132),
+    Size = UDim2.new(1, -20, 1, -142),
     BackgroundColor3 = Theme.Panel,
     BorderSizePixel = 0,
-    ScrollBarThickness = 5,
-    ScrollBarImageColor3 = Theme.Purple,
+    ScrollBarThickness = 4,
+    ScrollBarImageColor3 = Theme.SubText,
     CanvasSize = UDim2.new(0, 0, 0, 0),
-    AutomaticCanvasSize = Enum.AutomaticSize.Y
+    AutomaticCanvasSize = Enum.AutomaticSize.Y,
+    ScrollingDirection = Enum.ScrollingDirection.Y,
+    ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
 }, Main)
 
 Corner(List, 8)
 
 Create("UIPadding", {
-    PaddingTop = UDim.new(0, 8),
-    PaddingBottom = UDim.new(0, 8),
-    PaddingLeft = UDim.new(0, 8),
-    PaddingRight = UDim.new(0, 8)
+    PaddingTop = UDim.new(0, 7),
+    PaddingBottom = UDim.new(0, 7),
+    PaddingLeft = UDim.new(0, 7),
+    PaddingRight = UDim.new(0, 7)
 }, List)
 
 local Layout = Create("UIListLayout", {
@@ -231,39 +214,120 @@ local Layout = Create("UIListLayout", {
     SortOrder = Enum.SortOrder.LayoutOrder
 }, List)
 
--- SCAN
+-- DRAG SUPPORT
+local function MakeDraggable(target, handle)
+    local dragging = false
+    local dragStart
+    local startPos
+    local activeInput
+
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+
+            dragging = true
+            dragStart = input.Position
+            startPos = target.Position
+            activeInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if not dragging then
+            return
+        end
+
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+
+            local delta = input.Position - dragStart
+
+            target.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+            activeInput = nil
+        end
+    end)
+end
+
+MakeDraggable(Main, Header)
+MakeDraggable(OpenButton, OpenButton)
+
+-- OPEN / MINIMIZE / CLOSE
+local minimized = false
+local destroyed = false
+
+Minimize.MouseButton1Click:Connect(function()
+    minimized = true
+    Main.Visible = false
+    OpenButton.Visible = true
+end)
+
+OpenButton.MouseButton1Click:Connect(function()
+    minimized = false
+    Main.Visible = true
+    OpenButton.Visible = false
+end)
+
+Close.MouseButton1Click:Connect(function()
+    destroyed = true
+    Gui:Destroy()
+end)
+
+-- SCANNER
 local Remotes = {}
 local scanning = false
+local AUTO_SCAN_INTERVAL = 0.01
 
 local function Scan()
-    if scanning then
-        return
+    if scanning or destroyed then
+        return false
     end
 
     scanning = true
-    table.clear(Remotes)
 
-    for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
-        if obj:IsA("RemoteEvent")
-            or obj:IsA("RemoteFunction") then
+    local NewRemotes = {}
+    local ok, err = pcall(function()
+        for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
+            if obj:IsA("RemoteEvent")
+                or obj:IsA("RemoteFunction") then
 
-            table.insert(Remotes, {
-                Object = obj,
-                Name = obj.Name,
-                Type = obj.ClassName,
-                Path = obj:GetFullName()
-            })
+                table.insert(NewRemotes, {
+                    Object = obj,
+                    Name = obj.Name,
+                    Type = obj.ClassName,
+                    Path = obj:GetFullName()
+                })
+            end
         end
-    end
-
-    table.sort(Remotes, function(a, b)
-        return a.Path:lower() < b.Path:lower()
     end)
 
     scanning = false
+
+    if not ok then
+        Status.Text = "Scan failed: " .. tostring(err)
+        return false
+    end
+
+    table.sort(NewRemotes, function(a, b)
+        return a.Path:lower() < b.Path:lower()
+    end)
+
+    Remotes = NewRemotes
+    return true
 end
 
--- BUILD COPY CODE
+-- GENERATE CODE
 local function BuildCode(info)
     local obj = info.Object
 
@@ -271,7 +335,6 @@ local function BuildCode(info)
         return nil
     end
 
-    -- Build path from the actual instance hierarchy.
     local parts = {}
     local current = obj
 
@@ -283,16 +346,14 @@ local function BuildCode(info)
     local code = 'local Event = game:GetService("ReplicatedStorage")'
 
     for _, part in ipairs(parts) do
-        -- Escape quotes and backslashes in instance names.
         local escaped = part:gsub("\\", "\\\\"):gsub('"', '\\"')
         code ..= ':FindFirstChild("' .. escaped .. '")'
     end
 
     if info.Type == "RemoteEvent" then
-        code ..= '\n\nEvent:FireServer(\n    false,\n    false\n)'
+        code ..= '\n\n-- Replace these sample arguments with the documented arguments.\nEvent:FireServer(false, false)'
     else
-        code = code:gsub("local Event =", "local Event =")
-        code ..= '\n\n-- RemoteFunction: check the expected arguments before InvokeServer.'
+        code ..= '\n\n-- RemoteFunction: check its expected arguments before InvokeServer.'
     end
 
     return code
@@ -300,6 +361,10 @@ end
 
 -- RENDER LIST
 local function Render()
+    if destroyed or not Gui.Parent then
+        return
+    end
+
     for _, child in ipairs(List:GetChildren()) do
         if child ~= Layout and not child:IsA("UIPadding") then
             child:Destroy()
@@ -320,28 +385,17 @@ local function Render()
 
             local Row = Create("Frame", {
                 Name = "RemoteRow",
-                Size = UDim2.new(1, -2, 0, 76),
-                BackgroundColor3 = Theme.Background,
+                Size = UDim2.new(1, -2, 0, 78),
+                BackgroundColor3 = Theme.Row,
                 BorderSizePixel = 0,
                 LayoutOrder = shown
             }, List)
 
-            Corner(Row, 8)
-
-            local TypeColor = info.Type == "RemoteEvent"
-                and Theme.Purple
-                or Theme.Blue
-
-            Create("Frame", {
-                Position = UDim2.new(0, 5, 0, 8),
-                Size = UDim2.new(0, 3, 0, 60),
-                BackgroundColor3 = TypeColor,
-                BorderSizePixel = 0
-            }, Row)
+            Corner(Row, 7)
 
             Create("TextLabel", {
-                Position = UDim2.new(0, 15, 0, 5),
-                Size = UDim2.new(1, -115, 0, 22),
+                Position = UDim2.new(0, 10, 0, 5),
+                Size = UDim2.new(1, -108, 0, 23),
                 BackgroundTransparency = 1,
                 Text = info.Name,
                 TextColor3 = Theme.Text,
@@ -352,8 +406,8 @@ local function Render()
             }, Row)
 
             Create("TextLabel", {
-                Position = UDim2.new(0, 15, 0, 28),
-                Size = UDim2.new(1, -22, 0, 35),
+                Position = UDim2.new(0, 10, 0, 29),
+                Size = UDim2.new(1, -18, 0, 39),
                 BackgroundTransparency = 1,
                 Text = info.Type .. "\n" .. info.Path,
                 TextColor3 = Theme.SubText,
@@ -366,9 +420,9 @@ local function Render()
             }, Row)
 
             local Copy = Create("TextButton", {
-                Position = UDim2.new(1, -91, 0, 8),
-                Size = UDim2.new(0, 82, 0, 28),
-                BackgroundColor3 = Theme.PurpleDark,
+                Position = UDim2.new(1, -94, 0, 7),
+                Size = UDim2.new(0, 86, 0, 28),
+                BackgroundColor3 = Theme.Button,
                 Text = "COPY CODE",
                 TextColor3 = Theme.Text,
                 TextSize = 10,
@@ -377,6 +431,7 @@ local function Render()
             }, Row)
 
             Corner(Copy, 6)
+            Stroke(Copy, Theme.Border)
 
             Copy.MouseButton1Click:Connect(function()
                 local code = BuildCode(info)
@@ -391,13 +446,13 @@ local function Render()
 
                     if ok then
                         Status.Text = "Copied: " .. info.Name
-                        Status.TextColor3 = Color3.fromRGB(120, 230, 160)
+                        Status.TextColor3 = Theme.Green
                     else
                         Status.Text = "Clipboard unavailable"
                         Status.TextColor3 = Theme.SubText
                     end
                 else
-                    Status.Text = "Clipboard unavailable in this environment"
+                    Status.Text = "Clipboard unavailable"
                     Status.TextColor3 = Theme.SubText
                 end
             end)
@@ -409,17 +464,30 @@ local function Render()
         #Remotes,
         shown
     )
-
     Status.TextColor3 = Theme.SubText
 end
 
+-- SEARCH ONLY RE-RENDERS THE CURRENT SCAN
 Search:GetPropertyChangedSignal("Text"):Connect(Render)
 
+-- MANUAL REFRESH
 Refresh.MouseButton1Click:Connect(function()
-    Scan()
-    Render()
+    if Scan() then
+        Render()
+    end
 end)
 
--- INITIALIZE
+-- INITIAL SCAN
 Scan()
 Render()
+
+-- AUTOMATIC RESCAN
+task.spawn(function()
+    while Gui.Parent and not destroyed do
+        task.wait(AUTO_SCAN_INTERVAL)
+
+        if Scan() then
+            Render()
+        end
+    end
+end)
