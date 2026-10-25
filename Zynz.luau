@@ -1,6 +1,4 @@
--- Zynz All-in-One: stylish Modern + Classic UI test
--- Single-file version; no external Zynz library download required.
-
+-- Zynz.luau - library only (no automatic demo UI)
 -- Zynz.lua - advanced responsive Roblox UI library
 -- Features: window controls, tabs, keybinds, multi-select dropdowns, notifications, color tools, and static source scanning
 -- Client-side use: local Zynz = loadstring(...)() or require(ModuleScript)
@@ -15,30 +13,48 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
 -- MainTabTheme presets:
---   "Modern"  = icy cyan/white accent with a soft outer aura
---   "Classic" = old Windows/Roblox-era squared, beveled controls
---   "Normal"  = the original plain dark style (kept intact)
+--   "Modern"   = icy cyan/white accent with a soft outer aura
+--   "Classic"  = old Windows/Roblox-era squared, beveled controls
+--   "Normal"   = dark purple style
+--   "Halloween"= midnight purple, pumpkin orange, and ghostly violet
+--   "Christmas"= evergreen, festive red, snow white, and warm gold
 local PALETTES = {
     Normal = {
         Window = Color3.fromRGB(13, 11, 20), Tab = Color3.fromRGB(25, 22, 36),
-        TabSelected = Color3.fromRGB(91, 51, 157), Component = Color3.fromRGB(28, 25, 40),
-        ComponentHover = Color3.fromRGB(43, 36, 61), Line = Color3.fromRGB(65, 59, 79),
+        TabSelected = Color3.fromRGB(91, 51, 157), Component = Color3.fromRGB(42, 38, 56),
+        ComponentHover = Color3.fromRGB(57, 49, 75), Control = Color3.fromRGB(48, 44, 63), Popup = Color3.fromRGB(28, 25, 40), Line = Color3.fromRGB(91, 82, 110),
         Text = Color3.fromRGB(248, 246, 255), Muted = Color3.fromRGB(177, 168, 198),
         Accent = Color3.fromRGB(169, 102, 255), Aura = Color3.fromRGB(169, 102, 255),
     },
     Modern = {
         Window = Color3.fromRGB(13, 20, 29), Tab = Color3.fromRGB(19, 32, 44),
-        TabSelected = Color3.fromRGB(44, 103, 129), Component = Color3.fromRGB(20, 34, 46),
-        ComponentHover = Color3.fromRGB(31, 54, 68), Line = Color3.fromRGB(117, 211, 239),
+        TabSelected = Color3.fromRGB(44, 103, 129), Component = Color3.fromRGB(32, 49, 62),
+        ComponentHover = Color3.fromRGB(45, 66, 81), Control = Color3.fromRGB(24, 42, 55), Popup = Color3.fromRGB(17, 30, 41), Line = Color3.fromRGB(117, 211, 239),
         Text = Color3.fromRGB(242, 251, 255), Muted = Color3.fromRGB(177, 211, 224),
         Accent = Color3.fromRGB(177, 235, 255), Aura = Color3.fromRGB(145, 225, 255),
     },
     Classic = {
         Window = Color3.fromRGB(192, 192, 192), Tab = Color3.fromRGB(212, 208, 200),
-        TabSelected = Color3.fromRGB(0, 0, 128), Component = Color3.fromRGB(192, 192, 192),
-        ComponentHover = Color3.fromRGB(223, 223, 223), Line = Color3.fromRGB(64, 64, 64),
+        TabSelected = Color3.fromRGB(0, 0, 128), Component = Color3.fromRGB(211, 211, 211),
+        ComponentHover = Color3.fromRGB(232, 232, 232), Control = Color3.fromRGB(235, 235, 235), Popup = Color3.fromRGB(212, 208, 200), Line = Color3.fromRGB(64, 64, 64),
         Text = Color3.fromRGB(0, 0, 0), Muted = Color3.fromRGB(55, 55, 55),
         Accent = Color3.fromRGB(0, 0, 128), Aura = Color3.fromRGB(0, 0, 128),
+    },
+    Halloween = {
+        Window = Color3.fromRGB(18, 12, 28), Tab = Color3.fromRGB(35, 22, 48),
+        TabSelected = Color3.fromRGB(104, 47, 142), Component = Color3.fromRGB(48, 31, 60),
+        ComponentHover = Color3.fromRGB(66, 39, 76), Control = Color3.fromRGB(31, 20, 42),
+        Popup = Color3.fromRGB(26, 16, 37), Line = Color3.fromRGB(255, 126, 36),
+        Text = Color3.fromRGB(255, 245, 232), Muted = Color3.fromRGB(199, 169, 207),
+        Accent = Color3.fromRGB(255, 137, 43), Aura = Color3.fromRGB(159, 67, 220),
+    },
+    Christmas = {
+        Window = Color3.fromRGB(12, 28, 24), Tab = Color3.fromRGB(20, 47, 38),
+        TabSelected = Color3.fromRGB(157, 39, 49), Component = Color3.fromRGB(30, 57, 47),
+        ComponentHover = Color3.fromRGB(42, 76, 61), Control = Color3.fromRGB(20, 43, 35),
+        Popup = Color3.fromRGB(17, 38, 31), Line = Color3.fromRGB(224, 63, 72),
+        Text = Color3.fromRGB(246, 250, 245), Muted = Color3.fromRGB(190, 216, 202),
+        Accent = Color3.fromRGB(240, 198, 92), Aura = Color3.fromRGB(53, 166, 112),
     },
 }
 local COLORS = table.clone(PALETTES.Normal)
@@ -47,12 +63,18 @@ local function applyTheme(themeName)
     local name = string.lower(tostring(themeName or "Normal"))
     if name == "classic" then ACTIVE_THEME = "Classic"
     elseif name == "modern" then ACTIVE_THEME = "Modern"
+    elseif name == "halloween" then ACTIVE_THEME = "Halloween"
+    elseif name == "christmas" then ACTIVE_THEME = "Christmas"
     else ACTIVE_THEME = "Normal" end
     for key, value in pairs(PALETTES[ACTIVE_THEME]) do COLORS[key] = value end
 end
+local function controlColor() return COLORS.Control or COLORS.Component end
+local function popupColor() return COLORS.Popup or COLORS.Component end
+local function classicFont() return ACTIVE_THEME == "Classic" and Enum.Font.Arial or Enum.Font.Gotham end
 local function cornerRadius(modern, classic)
     if ACTIVE_THEME == "Classic" then return 0 end
     if ACTIVE_THEME == "Normal" then return 7 end
+    if ACTIVE_THEME == "Halloween" or ACTIVE_THEME == "Christmas" then return modern or 9 end
     return modern or 10
 end
 
@@ -62,6 +84,25 @@ local function make(className, props, parent)
         obj[k] = v
     end
     obj.Parent = parent
+    -- Remember which palette role each color property represents so SetTheme()
+    -- can recolor existing UI objects, not only newly-created controls.
+    local roleOrder = {
+        BackgroundColor3 = {"Window", "Tab", "TabSelected", "Component", "ComponentHover", "Control", "Popup"},
+        TextColor3 = {"Text", "Muted", "Accent"},
+        PlaceholderColor3 = {"Muted", "Text"},
+        Color = {"Line", "Accent", "Aura"},
+    }
+    for property, roles in pairs(roleOrder) do
+        local value = props and props[property]
+        if value ~= nil then
+            for _, role in ipairs(roles) do
+                if COLORS[role] ~= nil and value == COLORS[role] then
+                    obj:SetAttribute("ZynzThemeRole_" .. property, role)
+                    break
+                end
+            end
+        end
+    end
     return obj
 end
 
@@ -282,13 +323,14 @@ function Zynz:CreateWindow(options)
 
     -- Two faint outline layers create a Rayfield-like icy aura without changing the Normal theme.
     local auraOuter, auraInner
-    if ACTIVE_THEME == "Modern" then
+    if ACTIVE_THEME == "Modern" or ACTIVE_THEME == "Halloween" or ACTIVE_THEME == "Christmas" then
         auraOuter = make("Frame", {Name="ZynzAuraOuter", AnchorPoint=Vector2.new(0.5,0.5), Position=UDim2.fromScale(0.5,0.5), Size=UDim2.new(0.88,18,0.72,18), BackgroundTransparency=1, BorderSizePixel=0, ZIndex=0}, gui)
         round(auraOuter, 17)
-        make("UIStroke", {Color=COLORS.Aura, Thickness=8, Transparency=0.84}, auraOuter)
+        local seasonalAura = ACTIVE_THEME == "Halloween" or ACTIVE_THEME == "Christmas"
+        make("UIStroke", {Color=COLORS.Aura, Thickness=seasonalAura and 7 or 8, Transparency=seasonalAura and 0.79 or 0.84}, auraOuter)
         auraInner = make("Frame", {Name="ZynzAuraInner", AnchorPoint=Vector2.new(0.5,0.5), Position=UDim2.fromScale(0.5,0.5), Size=UDim2.new(0.88,7,0.72,7), BackgroundTransparency=1, BorderSizePixel=0, ZIndex=0}, gui)
         round(auraInner, 14)
-        make("UIStroke", {Color=Color3.fromRGB(218,247,255), Thickness=2, Transparency=0.68}, auraInner)
+        make("UIStroke", {Color=seasonalAura and COLORS.Accent or Color3.fromRGB(218,247,255), Thickness=2, Transparency=seasonalAura and 0.48 or 0.68}, auraInner)
     end
 
     local root = make("Frame", {
@@ -300,6 +342,191 @@ function Zynz:CreateWindow(options)
     make("UISizeConstraint", {MinSize = Vector2.new(260, 300), MaxSize = Vector2.new(920, 780)}, root)
     round(root, cornerRadius(15, 4))
     make("UIStroke", {Color = COLORS.Line, Thickness = ACTIVE_THEME == "Classic" and 1 or (ACTIVE_THEME == "Modern" and 1.5 or 1.1), Transparency = ACTIVE_THEME == "Classic" and 0 or (ACTIVE_THEME == "Modern" and 0.12 or 0.25)}, root)
+
+    -- Script-built Halloween scene: pumpkin, lantern, ghost, bats, cobwebs and moon.
+    -- All decorations are assembled from native Roblox UI objects; no image assets are required.
+    if ACTIVE_THEME == "Halloween" then
+        local scene = make("Frame", {
+            Name = "HalloweenSceneBackground", BackgroundTransparency = 1, BorderSizePixel = 0,
+            Position = UDim2.new(0.025, 0, 0.19, 0), Size = UDim2.new(0.36, 0, 0.73, 0),
+            ZIndex = 1, ClipsDescendants = false,
+        }, root)
+
+        local function sceneLine(parent, name, x1, y1, x2, y2, color, thickness, transparency)
+            local dx, dy = x2-x1, y2-y1
+            local length = math.sqrt(dx*dx + dy*dy)
+            local line = make("Frame", {Name=name, AnchorPoint=Vector2.new(0.5,0.5),
+                Position=UDim2.fromScale((x1+x2)/2,(y1+y2)/2), Size=UDim2.new(length,0,0,thickness),
+                Rotation=math.deg(math.atan2(dy,dx)), BackgroundColor3=color,
+                BackgroundTransparency=transparency or 0, BorderSizePixel=0, ZIndex=1}, parent)
+            round(line, thickness)
+            return line
+        end
+
+        local function sceneBall(parent, name, x, y, size, color, transparency)
+            local ball = make("Frame", {Name=name, AnchorPoint=Vector2.new(0.5,0.5),
+                Position=UDim2.fromScale(x,y), Size=UDim2.new(0,size,0,size), BackgroundColor3=color,
+                BackgroundTransparency=transparency or 0, BorderSizePixel=0, ZIndex=1}, parent)
+            round(ball, 1)
+            return ball
+        end
+
+        local orange = Color3.fromRGB(245, 112, 31)
+        local orangeLight = Color3.fromRGB(255, 155, 54)
+        local purple = Color3.fromRGB(125, 70, 170)
+        local dark = Color3.fromRGB(42, 25, 53)
+        local gold = Color3.fromRGB(255, 197, 76)
+        local leaf = Color3.fromRGB(76, 133, 58)
+
+        -- Crescent moon and distant stars.
+        sceneBall(scene, "MoonBase", 0.78, 0.12, 36, gold, 0.08)
+        sceneBall(scene, "MoonCutout", 0.82, 0.095, 31, COLORS.Window, 0)
+        for i, star in ipairs({{0.15,0.10},{0.40,0.17},{0.60,0.06},{0.91,0.28},{0.14,0.35}}) do
+            sceneLine(scene, "StarH"..i, star[1]-0.025,star[2],star[1]+0.025,star[2],gold,2,0.12)
+            sceneLine(scene, "StarV"..i, star[1],star[2]-0.025,star[1],star[2]+0.025,gold,2,0.12)
+        end
+
+        -- Friendly ghost built from a rounded head, body and eyes.
+        local ghost = make("Frame", {Name="GhostBody", AnchorPoint=Vector2.new(0.5,0.5), Position=UDim2.fromScale(0.23,0.30),
+            Size=UDim2.new(0,37,0,42), BackgroundColor3=Color3.fromRGB(245,239,255), BackgroundTransparency=0.04,
+            BorderSizePixel=0, ZIndex=1}, scene)
+        round(ghost, 18)
+        make("UIStroke", {Color=Color3.fromRGB(190,170,220), Thickness=1, Transparency=0.25}, ghost)
+        -- Small scallops suggest the ghost's floating sheet.
+        for i=1,3 do sceneBall(scene,"GhostHem"..i,0.23+(i-2)*0.095,0.365,12,Color3.fromRGB(245,239,255),0.04) end
+        sceneBall(scene,"GhostEyeL",0.218,0.29,4,dark,0)
+        sceneBall(scene,"GhostEyeR",0.252,0.29,4,dark,0)
+        sceneBall(scene,"GhostMouth",0.235,0.32,4,dark,0)
+
+        -- Pumpkin body: overlapping orange lobes, green stem, triangular eyes and grin.
+        local pumpkin = make("Frame", {Name="PumpkinBody", AnchorPoint=Vector2.new(0.5,0.5), Position=UDim2.fromScale(0.49,0.69),
+            Size=UDim2.new(0,100,0,76), BackgroundColor3=orange, BorderSizePixel=0, ZIndex=1}, scene)
+        round(pumpkin, 28)
+        make("UIStroke", {Color=Color3.fromRGB(255,180,82), Thickness=2, Transparency=0.12}, pumpkin)
+        for i, x in ipairs({0.18,0.34,0.50,0.66,0.82}) do
+            local rib = make("Frame", {Name="PumpkinRib"..i, AnchorPoint=Vector2.new(0.5,0.5), Position=UDim2.new(x,0,0.52,0),
+                Size=UDim2.new(0, i==3 and 22 or 16, 0, 66), BackgroundColor3=i%2==0 and orangeLight or Color3.fromRGB(218,83,25),
+                BackgroundTransparency=0.30, BorderSizePixel=0, ZIndex=1}, pumpkin)
+            round(rib, 12)
+        end
+        local stem = make("Frame", {Name="PumpkinStem", AnchorPoint=Vector2.new(0.5,0.5), Position=UDim2.new(0.53,0,0,2),
+            Size=UDim2.new(0,14,0,18), Rotation=12, BackgroundColor3=leaf, BorderSizePixel=0, ZIndex=1}, pumpkin)
+        round(stem, 4)
+        -- Face pieces sit above the pumpkin lobes.
+        sceneLine(pumpkin,"JackEyeLeftA",0.22,0.35,0.34,0.53,Color3.fromRGB(58,29,54),4,0)
+        sceneLine(pumpkin,"JackEyeLeftB",0.22,0.53,0.34,0.35,Color3.fromRGB(58,29,54),4,0)
+        sceneLine(pumpkin,"JackEyeRightA",0.66,0.35,0.78,0.53,Color3.fromRGB(58,29,54),4,0)
+        sceneLine(pumpkin,"JackEyeRightB",0.66,0.53,0.78,0.35,Color3.fromRGB(58,29,54),4,0)
+        sceneLine(pumpkin,"JackGrinTop",0.29,0.68,0.70,0.68,Color3.fromRGB(58,29,54),4,0)
+        sceneLine(pumpkin,"JackGrinLeft",0.29,0.68,0.37,0.79,Color3.fromRGB(58,29,54),3,0)
+        sceneLine(pumpkin,"JackGrinRight",0.70,0.68,0.62,0.79,Color3.fromRGB(58,29,54),3,0)
+
+        -- Hanging lantern on the right, built from a cap, frame, bars and warm inner glow.
+        sceneLine(scene,"LanternHook",0.79,0.34,0.79,0.42,Color3.fromRGB(181,145,101),3,0.08)
+        sceneLine(scene,"LanternTopArcA",0.75,0.40,0.79,0.36,Color3.fromRGB(190,155,105),2,0)
+        sceneLine(scene,"LanternTopArcB",0.79,0.36,0.83,0.40,Color3.fromRGB(190,155,105),2,0)
+        local lantern = make("Frame", {Name="HalloweenLantern", AnchorPoint=Vector2.new(0.5,0.5), Position=UDim2.fromScale(0.79,0.49),
+            Size=UDim2.new(0,34,0,42), BackgroundColor3=Color3.fromRGB(57,42,59), BorderSizePixel=0, ZIndex=1}, scene)
+        round(lantern, 6)
+        make("UIStroke", {Color=gold, Thickness=2, Transparency=0.08}, lantern)
+        local glow = make("Frame", {Name="LanternGlow", AnchorPoint=Vector2.new(0.5,0.5), Position=UDim2.fromScale(0.5,0.52),
+            Size=UDim2.new(0,19,0,27), BackgroundColor3=gold, BackgroundTransparency=0.10, BorderSizePixel=0, ZIndex=1}, lantern)
+        round(glow, 5)
+        for i=1,3 do sceneLine(lantern,"LanternBar"..i,0.22+(i-1)*0.28,0.18,0.22+(i-1)*0.28,0.82,dark,2,0.08) end
+        sceneLine(scene,"LanternBase",0.75,0.72,0.83,0.72,Color3.fromRGB(190,155,105),3,0)
+
+        -- Tiny bat silhouettes, assembled from triangles-like angled wings and a body.
+        for i, bat in ipairs({{0.45,0.27,0.65},{0.87,0.61,0.48}}) do
+            local x,y,scale=bat[1],bat[2],bat[3]
+            sceneLine(scene,"BatWingL"..i,x,y,x-0.045*scale,y-0.025*scale,dark,3,0.02)
+            sceneLine(scene,"BatWingL2_"..i,x-0.045*scale,y-0.025*scale,x-0.07*scale,y+0.015*scale,dark,3,0.02)
+            sceneLine(scene,"BatWingR"..i,x,y,x+0.045*scale,y-0.025*scale,dark,3,0.02)
+            sceneLine(scene,"BatWingR2_"..i,x+0.045*scale,y-0.025*scale,x+0.07*scale,y+0.015*scale,dark,3,0.02)
+            sceneLine(scene,"BatBody"..i,x,y-0.012*scale,x,y+0.022*scale,dark,4,0.02)
+        end
+
+        -- Ground mist and small decorative stones.
+        sceneLine(scene,"MistLine1",0.08,0.88,0.45,0.88,purple,3,0.28)
+        sceneLine(scene,"MistLine2",0.53,0.91,0.91,0.91,purple,3,0.28)
+        sceneBall(scene,"GroundDot1",0.12,0.82,5,gold,0.12)
+        sceneBall(scene,"GroundDot2",0.87,0.84,6,orangeLight,0.12)
+    end
+
+    -- Script-built Christmas tree background: no external image or asset ID required.
+    -- Made from UI Frames, rotated line segments, and small ornament circles.
+    if ACTIVE_THEME == "Christmas" then
+        local tree = make("Frame", {
+            Name = "ChristmasTreeBackground",
+            BackgroundTransparency = 1, BorderSizePixel = 0,
+            Position = UDim2.new(0.035, 0, 0.205, 0),
+            Size = UDim2.new(0.34, 0, 0.69, 0),
+            ZIndex = 1,
+        }, root)
+
+        local function treeLine(name, x1, y1, x2, y2, color, thickness, transparency)
+            local dx, dy = x2 - x1, y2 - y1
+            local length = math.sqrt(dx * dx + dy * dy)
+            local line = make("Frame", {
+                Name = name, AnchorPoint = Vector2.new(0.5, 0.5),
+                Position = UDim2.fromScale((x1 + x2) / 2, (y1 + y2) / 2),
+                Size = UDim2.new(length, 0, 0, thickness),
+                Rotation = math.deg(math.atan2(dy, dx)),
+                BackgroundColor3 = color, BackgroundTransparency = transparency or 0,
+                BorderSizePixel = 0, ZIndex = 1,
+            }, tree)
+            round(line, thickness)
+            return line
+        end
+
+        local function treeBall(name, x, y, color, size)
+            local ball = make("Frame", {
+                Name = name, AnchorPoint = Vector2.new(0.5, 0.5),
+                Position = UDim2.fromScale(x, y), Size = UDim2.new(0, size, 0, size),
+                BackgroundColor3 = color, BackgroundTransparency = 0.06,
+                BorderSizePixel = 0, ZIndex = 1,
+            }, tree)
+            round(ball, 1)
+            make("UIStroke", {Color = Color3.fromRGB(255, 255, 255), Thickness = 1, Transparency = 0.52}, ball)
+            local shine = make("Frame", {Name = "Highlight", Position = UDim2.new(0.22, 0, 0.17, 0), Size = UDim2.new(0.22, 0, 0.22, 0), BackgroundColor3 = Color3.fromRGB(255,255,255), BackgroundTransparency = 0.18, BorderSizePixel = 0, ZIndex = 1}, ball)
+            round(shine, 1)
+        end
+
+        local leaf = Color3.fromRGB(42, 137, 78)
+        local leafLight = Color3.fromRGB(69, 170, 99)
+        local wire = Color3.fromRGB(232, 190, 81)
+        -- Three broad tiers, drawn as pairs of branch lines.
+        treeLine("TreeLeftTop", 0.50, 0.12, 0.29, 0.39, leafLight, 5, 0.12)
+        treeLine("TreeRightTop", 0.50, 0.12, 0.71, 0.39, leafLight, 5, 0.12)
+        treeLine("TreeLeftMiddle", 0.50, 0.27, 0.20, 0.59, leaf, 6, 0.10)
+        treeLine("TreeRightMiddle", 0.50, 0.27, 0.80, 0.59, leaf, 6, 0.10)
+        treeLine("TreeLeftBottom", 0.50, 0.43, 0.10, 0.79, leafLight, 7, 0.10)
+        treeLine("TreeRightBottom", 0.50, 0.43, 0.90, 0.79, leafLight, 7, 0.10)
+        treeLine("TreeTrunk", 0.50, 0.77, 0.50, 0.94, Color3.fromRGB(150, 94, 53), 10, 0.10)
+
+        -- Gold garlands are made from short angled line segments, not an image.
+        local garlands = {
+            {0.34,0.31,0.48,0.36},{0.48,0.36,0.64,0.31},
+            {0.26,0.48,0.46,0.54},{0.46,0.54,0.70,0.47},
+            {0.17,0.66,0.43,0.72},{0.43,0.72,0.79,0.64},
+        }
+        for i, g in ipairs(garlands) do
+            treeLine("GoldGarland" .. i, g[1], g[2], g[3], g[4], wire, 2, 0.12)
+        end
+
+        treeBall("RedOrnament1", 0.40, 0.28, Color3.fromRGB(236, 68, 76), 9)
+        treeBall("GoldOrnament1", 0.62, 0.35, Color3.fromRGB(255, 210, 89), 8)
+        treeBall("BlueOrnament1", 0.28, 0.48, Color3.fromRGB(101, 201, 239), 8)
+        treeBall("RedOrnament2", 0.68, 0.51, Color3.fromRGB(236, 68, 76), 10)
+        treeBall("GoldOrnament2", 0.42, 0.61, Color3.fromRGB(255, 210, 89), 8)
+        treeBall("PurpleOrnament", 0.60, 0.70, Color3.fromRGB(194, 133, 255), 8)
+        treeBall("RedOrnament3", 0.22, 0.72, Color3.fromRGB(236, 68, 76), 9)
+
+        -- Four gold strokes form the star at the top.
+        treeLine("StarSlashA", 0.43, 0.075, 0.57, 0.075, Color3.fromRGB(255, 224, 126), 3, 0)
+        treeLine("StarSlashB", 0.50, 0.025, 0.50, 0.125, Color3.fromRGB(255, 224, 126), 3, 0)
+        treeLine("StarSlashC", 0.455, 0.035, 0.545, 0.115, Color3.fromRGB(255, 224, 126), 2, 0)
+        treeLine("StarSlashD", 0.545, 0.035, 0.455, 0.115, Color3.fromRGB(255, 224, 126), 2, 0)
+    end
     if auraOuter and auraInner then
         local function syncAura()
             if not root.Parent then return end
@@ -315,12 +542,34 @@ function Zynz:CreateWindow(options)
     if ACTIVE_THEME == "Classic" then
         local titleGradient = make("UIGradient", {Color=ColorSequence.new(Color3.fromRGB(0,0,160), Color3.fromRGB(0,0,96))}, header)
     end
-    local title = label(header, options.Name or "Zynz", {Size=UDim2.new(1,-74,1,0), Position=UDim2.new(0,12,0,0), MaxTextSize=15, MinTextSize=7})
+    local seasonalHeader = ACTIVE_THEME == "Halloween" or ACTIVE_THEME == "Christmas"
+    local title = label(header, options.Name or "Zynz", {Size=UDim2.new(1, seasonalHeader and -112 or -74, 1, 0), Position=UDim2.new(0,12,0,0), MaxTextSize=15, MinTextSize=7})
     title.Font = ACTIVE_THEME == "Classic" and Enum.Font.ArialBold or Enum.Font.GothamBold
     if ACTIVE_THEME == "Classic" then title.TextColor3 = Color3.fromRGB(255,255,255) end
     -- Make the title an explicit active drag target. Its bounds stop before the window controls.
     title.Active = true
     title.Selectable = false
+    if ACTIVE_THEME == "Halloween" then
+        -- Tiny script-drawn pumpkin badge in the header; no external image/asset ID.
+        local badge = make("Frame", {Name="HalloweenPumpkinBadge", BackgroundColor3=Color3.fromRGB(245,112,31), BorderSizePixel=0,
+            Size=UDim2.new(0,23,0,20), Position=UDim2.new(1,-103,0,12), ZIndex=2}, header)
+        round(badge, 8)
+        make("UIStroke", {Color=Color3.fromRGB(255,177,79), Thickness=1, Transparency=0.12}, badge)
+        local badgeStem = make("Frame", {Name="PumpkinBadgeStem", BackgroundColor3=Color3.fromRGB(76,133,58), BorderSizePixel=0,
+            Size=UDim2.new(0,5,0,7), Position=UDim2.new(0.43,0,0,-4), Rotation=8, ZIndex=2}, badge)
+        round(badgeStem, 2)
+        for i, x in ipairs({0.28,0.50,0.72}) do
+            local rib = make("Frame", {Name="BadgeRib"..i, BackgroundColor3=Color3.fromRGB(255,177,79), BackgroundTransparency=0.38,
+                BorderSizePixel=0, Size=UDim2.new(0,3,0.76,0), Position=UDim2.new(x,-1.5,0.12,0), ZIndex=2}, badge)
+            round(rib, 2)
+        end
+        local seasonalMark = label(header, "☾", {Name="HalloweenMark", Size=UDim2.new(0,12,1,0), Position=UDim2.new(1,-122,0,0), TextXAlignment=Enum.TextXAlignment.Center, TextColor3=COLORS.Accent, MaxTextSize=14, MinTextSize=8})
+        seasonalMark.Font = Enum.Font.GothamBold
+    elseif ACTIVE_THEME == "Christmas" then
+        -- Script-drawn Christmas tree is placed behind the window content; header uses a text-only snowflake.
+        local seasonalMark = label(header, "❄", {Name="ChristmasMark", Size=UDim2.new(0,26,1,0), Position=UDim2.new(1,-108,0,0), TextXAlignment=Enum.TextXAlignment.Center, TextColor3=COLORS.Accent, MaxTextSize=18, MinTextSize=8})
+        seasonalMark.Font = Enum.Font.GothamBold
+    end
     local minimize = make("TextButton", {Name="Minimize", Text="−", Font=Enum.Font.GothamBold, TextSize=18, TextColor3=COLORS.Text, BackgroundColor3=COLORS.Component, BorderSizePixel=0, Size=UDim2.new(0,32,0,32), Position=UDim2.new(1,-72,0,6), AutoButtonColor=false}, header)
     round(minimize, cornerRadius(9, 3))
     if ACTIVE_THEME == "Classic" then minimize.Font = Enum.Font.ArialBold; minimize.TextColor3 = Color3.fromRGB(0,0,0); make("UIStroke", {Color=Color3.fromRGB(255,255,255), Thickness=1}, minimize) end
@@ -485,6 +734,43 @@ function Zynz:CreateWindow(options)
     end)
 
     local window = {Gui=gui, Root=root, _tabs={}, _active=nil, _restore=restore}
+
+    -- Change between built-in themes at runtime. Existing tabs, labels, buttons,
+    -- controls, popups and strokes are recolored using their recorded palette roles.
+    function window:SetTheme(themeName)
+        if type(themeName) ~= "string" or not PALETTES[themeName] then
+            local wanted = string.lower(tostring(themeName or ""))
+            for name in pairs(PALETTES) do
+                if string.lower(name) == wanted then themeName = name; break end
+            end
+        end
+        if type(themeName) ~= "string" or not PALETTES[themeName] then return false end
+        applyTheme(themeName)
+        for _, obj in ipairs(gui:GetDescendants()) do
+            for property, roles in pairs({
+                BackgroundColor3 = true, TextColor3 = true,
+                PlaceholderColor3 = true, Color = true,
+            }) do
+                local role = obj:GetAttribute("ZynzThemeRole_" .. property)
+                if role and COLORS[role] then
+                    pcall(function() obj[property] = COLORS[role] end)
+                end
+            end
+            if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+                if ACTIVE_THEME == "Classic" then obj.Font = Enum.Font.Arial else obj.Font = Enum.Font.Gotham end
+            end
+        end
+        -- Explicitly refresh the window shell and tab states.
+        root.BackgroundColor3 = COLORS.Window
+        for _, item in ipairs(window._tabs) do
+            item.Button.BackgroundColor3 = item == window._active and COLORS.TabSelected or COLORS.Tab
+            item.Button.TextColor3 = ACTIVE_THEME == "Classic" and item == window._active and Color3.fromRGB(255,255,255) or COLORS.Text
+            item.Page.ScrollBarImageColor3 = COLORS.Line
+        end
+        local stroke = root:FindFirstChildOfClass("UIStroke")
+        if stroke then stroke.Color = COLORS.Line end
+        return true
+    end
     function window:CreateTab(tabOptions)
         tabOptions = tabOptions or {}
         local tabName = tostring(tabOptions.Name or "Tab")
@@ -520,7 +806,11 @@ function Zynz:CreateWindow(options)
             local frame = make("Frame", {Name=name, Size=UDim2.new(1,0,0,height or rowHeight()), BackgroundColor3=COLORS.Component, BorderSizePixel=0, ClipsDescendants=true}, tabPage)
             round(frame, cornerRadius(10, 3))
             if ACTIVE_THEME == "Modern" then
-                make("UIStroke", {Color=COLORS.Line, Thickness=1, Transparency=0.82}, frame)
+                make("UIStroke", {Color=COLORS.Line, Thickness=1, Transparency=0.78}, frame)
+            elseif ACTIVE_THEME == "Halloween" or ACTIVE_THEME == "Christmas" then
+                make("UIStroke", {Color=COLORS.Line, Thickness=1, Transparency=0.68}, frame)
+            elseif ACTIVE_THEME == "Classic" then
+                make("UIStroke", {Color=Color3.fromRGB(128,128,128), Thickness=1, Transparency=0}, frame)
             end
             return nextOrder(frame)
         end
@@ -529,11 +819,16 @@ function Zynz:CreateWindow(options)
         end
 
         function tab:CreateButton(opts)
-            opts=opts or {}; local frame=component("Button",rowHeight()); local txt=componentName(frame,opts.Name or "Button")
-            local hit=make("TextButton",{Name="Hitbox",Text="",BackgroundTransparency=1,Size=UDim2.fromScale(1,1)},frame)
+            opts=opts or {}
+            local frame=component("Button",rowHeight())
+            local txt=componentName(frame,opts.Name or "Button",62)
+            local clickText=label(frame,"Click",{Name="ClickHint",Size=UDim2.new(0,48,1,0),Position=UDim2.new(1,-54,0,0),TextXAlignment=Enum.TextXAlignment.Right,TextColor3=ACTIVE_THEME=="Classic" and Color3.fromRGB(0,0,128) or COLORS.Accent,MaxTextSize=getScale(),MinTextSize=5})
+            clickText.ZIndex=2
+            if ACTIVE_THEME=="Classic" then clickText.Font=Enum.Font.ArialBold end
+            local hit=make("TextButton",{Name="Hitbox",Text="",BackgroundTransparency=1,Size=UDim2.fromScale(1,1),ZIndex=1,AutoButtonColor=false},frame)
             connectHover(frame)
             hit.MouseButton1Click:Connect(function() if type(opts.Callback)=="function" then task.spawn(opts.Callback) end end)
-            return {Frame=frame,Label=txt}
+            return {Frame=frame,Label=txt,ClickLabel=clickText}
         end
 
         function tab:CreateToggle(opts)
@@ -584,7 +879,7 @@ function Zynz:CreateWindow(options)
             for _ in combined:gmatch("\n") do lineCount+=1 end
             local approx=math.max(1,math.ceil(#combined/74))
             local height=math.clamp(14+math.max(lineCount,approx)*11,34,180)
-            local frame=make("Frame",{Name="Paragraph",Size=UDim2.new(1,0,0,height),BackgroundColor3=COLORS.Component,BorderSizePixel=0},tabPage); round(frame,7); nextOrder(frame)
+            local frame=make("Frame",{Name="Paragraph",Size=UDim2.new(1,0,0,height),BackgroundColor3=COLORS.Component,BorderSizePixel=ACTIVE_THEME=="Classic" and 1 or 0},tabPage); round(frame,cornerRadius(7,0)); if ACTIVE_THEME=="Modern" or ACTIVE_THEME=="Classic" then make("UIStroke",{Color=COLORS.Line,Thickness=1,Transparency=ACTIVE_THEME=="Classic" and 0 or 0.78},frame) end; nextOrder(frame)
             local txt=make("TextLabel",{Name="Text",Position=UDim2.new(0,9,0,5),Size=UDim2.new(1,-18,0,0),AutomaticSize=Enum.AutomaticSize.Y,BackgroundTransparency=1,Text=combined,TextColor3=COLORS.Text,Font=Enum.Font.Gotham,TextSize=getScale(),TextScaled=false,TextWrapped=true,TextXAlignment=Enum.TextXAlignment.Left,TextYAlignment=Enum.TextYAlignment.Top,RichText=opts.RichText==true},frame)
             make("UITextSizeConstraint",{MinTextSize=getScale(),MaxTextSize=getScale()},txt)
             local function resizeParagraph()
@@ -607,7 +902,7 @@ function Zynz:CreateWindow(options)
 
         function tab:CreateInput(opts)
             opts=opts or {}; local frame=component("Input",rowHeight()); componentName(frame,opts.Name or "Input",95)
-            local input=make("TextBox",{Name="InputBox",AnchorPoint=Vector2.new(1,.5),Position=UDim2.new(1,-6,.5,0),Size=UDim2.new(0,110,0,controlHeight()),BackgroundColor3=(ACTIVE_THEME == "Classic" and Color3.fromRGB(223,223,223) or (ACTIVE_THEME == "Modern" and Color3.fromRGB(18,31,42) or Color3.fromRGB(39,39,39))),BorderSizePixel=0,Text=tostring(opts.Default or ""),PlaceholderText=opts.Placeholder or "Enter...",TextColor3=COLORS.Text,PlaceholderColor3=COLORS.Muted,Font=Enum.Font.Gotham,TextSize=getScale(),TextScaled=true,ClearTextOnFocus=false},frame); round(input,ACTIVE_THEME == "Classic" and 0 or 5); if ACTIVE_THEME == "Classic" then input.Font = Enum.Font.Arial; make("UIStroke", {Color=Color3.fromRGB(128,128,128), Thickness=1}, input) end; addTextConstraint(input,4,getScale())
+            local input=make("TextBox",{Name="InputBox",AnchorPoint=Vector2.new(1,.5),Position=UDim2.new(1,-6,.5,0),Size=UDim2.new(0,110,0,controlHeight()),BackgroundColor3=controlColor(),BorderSizePixel=0,Text=tostring(opts.Default or ""),PlaceholderText=opts.Placeholder or "Enter...",TextColor3=COLORS.Text,PlaceholderColor3=COLORS.Muted,Font=Enum.Font.Gotham,TextSize=getScale(),TextScaled=true,ClearTextOnFocus=false},frame); round(input,cornerRadius(5,0)); if ACTIVE_THEME == "Classic" then input.Font = Enum.Font.Arial; make("UIStroke", {Color=Color3.fromRGB(128,128,128), Thickness=1}, input) end; addTextConstraint(input,4,getScale())
             input.FocusLost:Connect(function(enter) if type(opts.Callback)=="function" then task.spawn(opts.Callback,input.Text,enter) end end)
             return {Frame=frame,Input=input,GetValue=function() return input.Text end,SetValue=function(_,v) input.Text=tostring(v) end}
         end
@@ -618,10 +913,10 @@ function Zynz:CreateWindow(options)
             local chosen=tostring(opts.CurrentOption or optionsList[1] or "Select")
             local function closedText() return chosen end
             local function openedText() return chosen end
-            local drop=make("TextButton",{Name="Select",AnchorPoint=Vector2.new(1,.5),Position=UDim2.new(1,-5,.5,0),Size=UDim2.new(0,116,0,controlHeight()),BackgroundColor3=(ACTIVE_THEME == "Classic" and Color3.fromRGB(223,223,223) or (ACTIVE_THEME == "Modern" and Color3.fromRGB(18,31,42) or Color3.fromRGB(39,39,39))),BorderSizePixel=0,Text=closedText(),TextColor3=COLORS.Text,Font=Enum.Font.Gotham,TextSize=getScale(),TextScaled=true,TextTruncate=Enum.TextTruncate.AtEnd,TextXAlignment=Enum.TextXAlignment.Left,AutoButtonColor=false,ZIndex=4},frame)
-            round(drop,ACTIVE_THEME == "Classic" and 0 or 5); if ACTIVE_THEME == "Classic" then drop.Font = Enum.Font.Arial; make("UIStroke", {Color=Color3.fromRGB(128,128,128), Thickness=1}, drop) end; addTextConstraint(drop,4,getScale())
+            local drop=make("TextButton",{Name="Select",AnchorPoint=Vector2.new(1,.5),Position=UDim2.new(1,-5,.5,0),Size=UDim2.new(0,116,0,controlHeight()),BackgroundColor3=controlColor(),BorderSizePixel=0,Text=closedText(),TextColor3=COLORS.Text,Font=Enum.Font.Gotham,TextSize=getScale(),TextScaled=true,TextTruncate=Enum.TextTruncate.AtEnd,TextXAlignment=Enum.TextXAlignment.Left,AutoButtonColor=false,ZIndex=4},frame)
+            round(drop,cornerRadius(5,0)); if ACTIVE_THEME == "Classic" then drop.Font = Enum.Font.Arial; make("UIStroke", {Color=Color3.fromRGB(128,128,128), Thickness=1}, drop) end; addTextConstraint(drop,4,getScale())
             make("UIPadding",{PaddingLeft=UDim.new(0,8),PaddingRight=UDim.new(0,24)},drop)
-            local arrow=make("TextLabel",{Name="DropdownArrow",AnchorPoint=Vector2.new(1,.5),Position=UDim2.new(1,-7,.5,0),Size=UDim2.new(0,16,0,20),BackgroundTransparency=1,Text="v",Rotation=0,TextColor3=COLORS.Text,Font=Enum.Font.GothamBold,TextSize=14,TextScaled=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,ZIndex=5},drop)
+            local arrow=make("TextLabel",{Name="DropdownArrow",AnchorPoint=Vector2.new(1,.5),Position=UDim2.new(1,-7,.5,0),Size=UDim2.new(0,16,0,20),BackgroundTransparency=1,Text="v",Rotation=0,TextColor3=COLORS.Text,Font=ACTIVE_THEME=="Classic" and Enum.Font.ArialBold or Enum.Font.GothamBold,TextSize=14,TextScaled=false,TextXAlignment=Enum.TextXAlignment.Center,TextYAlignment=Enum.TextYAlignment.Center,ZIndex=5},drop)
             local popup
             local popupTween
             local function closePopup()
@@ -658,13 +953,13 @@ function Zynz:CreateWindow(options)
                 local targetPosition=UDim2.fromOffset(screenX,screenY)
                 local popupHeight=visibleRows*rowH+12
                 -- Parent the menu to the ScreenGui, not the scrolling tab. This anchors it directly below the dropdown control and prevents it appearing at the top of the tab.
-                popup=make("Frame",{Name="DropdownOptions",Position=targetPosition-UDim2.fromOffset(0,7),Size=UDim2.new(0,popupWidth,0,0),BackgroundColor3=Color3.fromRGB(31,31,31),BorderSizePixel=0,ZIndex=200,ClipsDescendants=true},gui)
-                round(popup,6); make("UIStroke",{Color=COLORS.Line,Thickness=1},popup)
+                popup=make("Frame",{Name="DropdownOptions",Position=targetPosition-UDim2.fromOffset(0,7),Size=UDim2.new(0,popupWidth,0,0),BackgroundColor3=popupColor(),BorderSizePixel=ACTIVE_THEME=="Classic" and 1 or 0,ZIndex=200,ClipsDescendants=true},gui)
+                round(popup,cornerRadius(6,0)); make("UIStroke",{Color=COLORS.Line,Thickness=1,Transparency=ACTIVE_THEME=="Classic" and 0 or 0.15},popup)
                 local list=make("ScrollingFrame",{Name="Options",Position=UDim2.new(0,5,0,5),Size=UDim2.new(1,-10,1,-10),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=3,ScrollingDirection=Enum.ScrollingDirection.Y,AutomaticCanvasSize=Enum.AutomaticSize.Y,CanvasSize=UDim2.new(0,0,0,0),ZIndex=201},popup)
                 local grid=make("UIGridLayout",{Name="TwoLaneLayout",CellSize=UDim2.new(0.5,-3,0,rowH),CellPadding=UDim2.new(0,4,0,4),SortOrder=Enum.SortOrder.LayoutOrder},list)
                 for i,value in ipairs(optionsList) do
-                    local item=make("TextButton",{Name="Option",LayoutOrder=i,Text=tostring(value),TextColor3=COLORS.Text,Font=Enum.Font.Gotham,TextSize=getScale(),TextScaled=true,TextTruncate=Enum.TextTruncate.AtEnd,BackgroundColor3=tostring(value)==chosen and COLORS.TabSelected or COLORS.Tab,BorderSizePixel=0,AutoButtonColor=false,ZIndex=202},list)
-                    round(item,4); make("UIPadding",{PaddingLeft=UDim.new(0,5),PaddingRight=UDim.new(0,3)},item); addTextConstraint(item,4,getScale())
+                    local item=make("TextButton",{Name="Option",LayoutOrder=i,Text=tostring(value),TextColor3=(ACTIVE_THEME=="Classic" and tostring(value)==chosen) and Color3.fromRGB(255,255,255) or COLORS.Text,Font=classicFont(),TextSize=getScale(),TextScaled=true,TextTruncate=Enum.TextTruncate.AtEnd,BackgroundColor3=tostring(value)==chosen and COLORS.TabSelected or COLORS.Tab,BorderSizePixel=0,AutoButtonColor=false,ZIndex=202},list)
+                    round(item,cornerRadius(4,0)); if ACTIVE_THEME=="Classic" then make("UIStroke",{Color=Color3.fromRGB(128,128,128),Thickness=1},item) end; make("UIPadding",{PaddingLeft=UDim.new(0,5),PaddingRight=UDim.new(0,3)},item); addTextConstraint(item,4,getScale())
                     item.MouseButton1Click:Connect(function() choose(value) end)
                 end
                 local function updateCanvas()
@@ -712,8 +1007,8 @@ function Zynz:CreateWindow(options)
             if typeof(current) == "string" then current = Enum.KeyCode[current] or Enum.KeyCode.RightControl end
             if typeof(current) ~= "EnumItem" then current = Enum.KeyCode.RightControl end
             local listening = false
-            local button = make("TextButton", {Name="KeyButton", AnchorPoint=Vector2.new(1,.5), Position=UDim2.new(1,-6,.5,0), Size=UDim2.new(0,100,0,controlHeight()), BackgroundColor3=(ACTIVE_THEME == "Classic" and Color3.fromRGB(223,223,223) or (ACTIVE_THEME == "Modern" and Color3.fromRGB(18,31,42) or Color3.fromRGB(39,39,39))), BorderSizePixel=0, Text=current.Name, TextColor3=COLORS.Text, Font=Enum.Font.Gotham, TextSize=getScale(), TextScaled=true, AutoButtonColor=false}, frame)
-            round(button,5); addTextConstraint(button,4,getScale())
+            local button = make("TextButton", {Name="KeyButton", AnchorPoint=Vector2.new(1,.5), Position=UDim2.new(1,-6,.5,0), Size=UDim2.new(0,100,0,controlHeight()), BackgroundColor3=controlColor(), BorderSizePixel=0, Text=current.Name, TextColor3=COLORS.Text, Font=Enum.Font.Gotham, TextSize=getScale(), TextScaled=true, AutoButtonColor=false}, frame)
+            round(button,cornerRadius(5,0)); if ACTIVE_THEME=="Classic" then button.Font=Enum.Font.Arial; make("UIStroke",{Color=Color3.fromRGB(128,128,128),Thickness=1},button) end; addTextConstraint(button,4,getScale())
             button.MouseButton1Click:Connect(function() listening=true; button.Text="Press key..." end)
             local connection
             connection=UserInputService.InputBegan:Connect(function(input, processed)
@@ -751,8 +1046,8 @@ function Zynz:CreateWindow(options)
                 local joined=table.concat(values,", ")
                 return #joined>22 and (joined:sub(1,19).."...") or joined
             end
-            local button=make("TextButton",{Name="MultiSelectButton",AnchorPoint=Vector2.new(1,.5),Position=UDim2.new(1,-5,.5,0),Size=UDim2.new(0,94,0,21),BackgroundColor3=(ACTIVE_THEME == "Classic" and Color3.fromRGB(223,223,223) or (ACTIVE_THEME == "Modern" and Color3.fromRGB(18,31,42) or Color3.fromRGB(39,39,39))),BorderSizePixel=0,Text=selectedText().." ▾",TextColor3=COLORS.Text,Font=Enum.Font.Gotham,TextSize=getScale(),TextScaled=true,TextTruncate=Enum.TextTruncate.AtEnd,AutoButtonColor=false,ZIndex=4},frame)
-            round(button,5); addTextConstraint(button,4,getScale())
+            local button=make("TextButton",{Name="MultiSelectButton",AnchorPoint=Vector2.new(1,.5),Position=UDim2.new(1,-5,.5,0),Size=UDim2.new(0,94,0,21),BackgroundColor3=controlColor(),BorderSizePixel=0,Text=selectedText().." ▾",TextColor3=COLORS.Text,Font=classicFont(),TextSize=getScale(),TextScaled=true,TextTruncate=Enum.TextTruncate.AtEnd,AutoButtonColor=false,ZIndex=4},frame)
+            round(button,cornerRadius(5,0)); if ACTIVE_THEME=="Classic" then button.Font=Enum.Font.Arial; make("UIStroke",{Color=Color3.fromRGB(128,128,128),Thickness=1},button) end; addTextConstraint(button,4,getScale())
             local popup
             local function closePopup() if popup then popup:Destroy(); popup=nil end; if button.Parent then button.Text=selectedText().." ▾" end end
             local function toggle(value)
@@ -763,7 +1058,7 @@ function Zynz:CreateWindow(options)
                 end
                 if popup and popup.Parent then
                     for _,child in ipairs(popup:GetDescendants()) do
-                        if child:IsA("TextButton") and child:GetAttribute("OptionValue")==key then child.Text=(selected[key] and "✓  " or "   ")..key; child.BackgroundColor3=selected[key] and COLORS.TabSelected or COLORS.Tab end
+                        if child:IsA("TextButton") and child:GetAttribute("OptionValue")==key then child.Text=(selected[key] and "✓  " or "   ")..key; child.BackgroundColor3=selected[key] and COLORS.TabSelected or COLORS.Tab; child.TextColor3=(ACTIVE_THEME=="Classic" and selected[key]) and Color3.fromRGB(255,255,255) or COLORS.Text end
                     end
                     button.Text=selectedText().." ▴"
                 end
@@ -772,12 +1067,12 @@ function Zynz:CreateWindow(options)
                 if popup then closePopup(); return end
                 if #available==0 then return end
                 local rowH=24; local maxRows=math.min(#available,7)
-                popup=make("Frame",{Name="MultiDropdownOptions",Position=UDim2.new(0,frame.AbsolutePosition.X-tabPage.AbsolutePosition.X,0,frame.AbsolutePosition.Y-tabPage.AbsolutePosition.Y+frame.AbsoluteSize.Y+2),Size=UDim2.new(0,math.max(94,button.AbsoluteSize.X),0,rowH*maxRows),BackgroundColor3=Color3.fromRGB(31,31,31),BorderSizePixel=0,ZIndex=60},tabPage)
-                round(popup,6); make("UIStroke",{Color=COLORS.Line,Thickness=1},popup)
+                popup=make("Frame",{Name="MultiDropdownOptions",Position=UDim2.new(0,frame.AbsolutePosition.X-tabPage.AbsolutePosition.X,0,frame.AbsolutePosition.Y-tabPage.AbsolutePosition.Y+frame.AbsoluteSize.Y+2),Size=UDim2.new(0,math.max(94,button.AbsoluteSize.X),0,rowH*maxRows),BackgroundColor3=popupColor(),BorderSizePixel=ACTIVE_THEME=="Classic" and 1 or 0,ZIndex=60},tabPage)
+                round(popup,cornerRadius(6,0)); make("UIStroke",{Color=COLORS.Line,Thickness=1,Transparency=ACTIVE_THEME=="Classic" and 0 or 0.15},popup)
                 local list=make("ScrollingFrame",{Name="Options",Size=UDim2.fromScale(1,1),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=2,CanvasSize=UDim2.new(0,0,0,#available*rowH),ZIndex=61},popup)
                 for i,value in ipairs(available) do
                     local key=tostring(value); local on=selected[key]==true
-                    local item=make("TextButton",{Name="Option",Text=(on and "✓  " or "   ")..key,TextColor3=COLORS.Text,Font=Enum.Font.Gotham,TextSize=getScale(),TextScaled=true,TextTruncate=Enum.TextTruncate.AtEnd,TextXAlignment=Enum.TextXAlignment.Left,Position=UDim2.new(0,0,0,(i-1)*rowH),Size=UDim2.new(1,-2,0,rowH),BackgroundColor3=on and COLORS.TabSelected or COLORS.Tab,BorderSizePixel=0,AutoButtonColor=false,ZIndex=62},list)
+                    local item=make("TextButton",{Name="Option",Text=(on and "✓  " or "   ")..key,TextColor3=(ACTIVE_THEME=="Classic" and on) and Color3.fromRGB(255,255,255) or COLORS.Text,Font=classicFont(),TextSize=getScale(),TextScaled=true,TextTruncate=Enum.TextTruncate.AtEnd,TextXAlignment=Enum.TextXAlignment.Left,Position=UDim2.new(0,0,0,(i-1)*rowH),Size=UDim2.new(1,-2,0,rowH),BackgroundColor3=on and COLORS.TabSelected or COLORS.Tab,BorderSizePixel=0,AutoButtonColor=false,ZIndex=62},list)
                     item:SetAttribute("OptionValue",key); make("UIPadding",{PaddingLeft=UDim.new(0,7),PaddingRight=UDim.new(0,4)},item); addTextConstraint(item,4,getScale())
                     item.MouseButton1Click:Connect(function() toggle(value) end)
                 end
@@ -806,7 +1101,7 @@ function Zynz:CreateWindow(options)
             local rgb=make("Frame",{Name="RGBInputs",Position=UDim2.new(0,0,1,-11),Size=UDim2.new(1,0,0,11),BackgroundTransparency=1},frame)
             local boxes={}
             for i,channel in ipairs({"R","G","B"}) do
-                local box=make("TextBox",{Name=channel,Position=UDim2.new((i-1)/3,0,0,0),Size=UDim2.new(1/3,-3,1,0),BackgroundColor3=(ACTIVE_THEME == "Classic" and Color3.fromRGB(223,223,223) or (ACTIVE_THEME == "Modern" and Color3.fromRGB(18,31,42) or Color3.fromRGB(39,39,39))),BorderSizePixel=0,Text="0",TextColor3=COLORS.Text,Font=Enum.Font.Gotham,TextSize=getScale(),TextScaled=true,ClearTextOnFocus=false},rgb); round(box,3); addTextConstraint(box,4,getScale()); boxes[i]=box
+                local box=make("TextBox",{Name=channel,Position=UDim2.new((i-1)/3,0,0,0),Size=UDim2.new(1/3,-3,1,0),BackgroundColor3=controlColor(),BorderSizePixel=0,Text="0",TextColor3=COLORS.Text,Font=Enum.Font.Gotham,TextSize=getScale(),TextScaled=true,ClearTextOnFocus=false},rgb); round(box,3); addTextConstraint(box,4,getScale()); boxes[i]=box
             end
             local function refresh(call)
                 current=Color3.fromHSV(h,s,v); picker.BackgroundColor3=Color3.fromHSV(h,1,1); sat:FindFirstChildOfClass("UIGradient").Color=ColorSequence.new(Color3.new(1,1,1),Color3.fromHSV(h,1,1)); cursor.Position=UDim2.new(s,0,1-v,0); hueKnob.Position=UDim2.new(h,0,.5,0)
@@ -879,7 +1174,7 @@ function Zynz:CreateWindow(options)
     return window
 end
 
-Zynz.Version = "2.3.0-maintabtheme-modern-classic-normal"
+Zynz.Version = "2.7.0-multi-theme-runtime-switch"
 Zynz.Components = {"Button", "Toggle", "Slider", "Paragraph", "Section", "Label", "Divider", "Input", "Dropdown", "MultiDropdown", "Keybind", "ColorPicker", "Notification"}
 
 function Zynz:SetTheme(theme)
